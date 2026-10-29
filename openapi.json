@@ -1,0 +1,615 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Carpeta Viva API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Sistema"
+        ],
+        "summary": "Estado del servicio",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Iniciar sesión",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Usuario autenticado",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/_estado": {
+      "get": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_auth__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Auth  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/zonas-hogares/_estado": {
+      "get": {
+        "tags": [
+          "Zonas y Hogares"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_zonas_hogares__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Zonas Hogares  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/madres/_estado": {
+      "get": {
+        "tags": [
+          "Madres Sustitutas"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_madres__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Madres  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profesionales/_estado": {
+      "get": {
+        "tags": [
+          "Profesionales"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_profesionales__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Profesionales  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/menores/_estado": {
+      "get": {
+        "tags": [
+          "Menores y Expedientes"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_menores__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Menores  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/asignaciones/_estado": {
+      "get": {
+        "tags": [
+          "Asignaciones y Traslados"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_asignaciones__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Asignaciones  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/_estado": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_documentos__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Documentos  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/_estado": {
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_inventario__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Inventario  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/_estado": {
+      "get": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_alimentos__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Alimentos  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/citas/_estado": {
+      "get": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_citas__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Citas  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertas/_estado": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_alertas__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Alertas  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reportes/_estado": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_reportes__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Reportes  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ia/_estado": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_ia__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Ia  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auditoria/_estado": {
+      "get": {
+        "tags": [
+          "Auditoría"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_auditoria__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Auditoria  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archivo/_estado": {
+      "get": {
+        "tags": [
+          "Archivo y Cierre"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_archivo__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Archivo  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "TokenOut": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenOut"
+      },
+      "UsuarioOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "rol": {
+            "type": "string",
+            "title": "Rol"
+          },
+          "zona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "rol"
+        ],
+        "title": "UsuarioOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
