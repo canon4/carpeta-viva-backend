@@ -91,6 +91,15 @@ def _tiene_permiso_seccion(session: Session, usuario, menor: Menor, seccion: str
     return False
 
 
+def tiene_permiso_seccion(session: Session, usuario, menor_id: uuid.UUID, seccion: str) -> bool:
+    """Wrapper público de `_tiene_permiso_seccion` para otros módulos (p. ej. `documentos`), mismo
+    patrón que `puede_ver_menor` (ADR-0008, sección 4): recibe `menor_id`, no la entidad."""
+    menor = MenorRepository(session).por_id(menor_id)
+    if menor is None:
+        return False
+    return _tiene_permiso_seccion(session, usuario, menor, seccion)
+
+
 def puede_ver_menor(session: Session, usuario, menor_id: uuid.UUID) -> bool:
     """Wrapper público de `_puede_ver_menor` para otros módulos (p. ej. `asignaciones`) que necesitan
     aplicar la misma regla de visibilidad por fila sin acceder directamente al repositorio."""

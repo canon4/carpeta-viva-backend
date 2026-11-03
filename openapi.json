@@ -2106,6 +2106,825 @@
         }
       }
     },
+    "/api/v1/documentos": {
+      "post": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Crear documento",
+        "operationId": "crear_documento_endpoint_api_v1_documentos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_crear_documento_endpoint_api_v1_documentos_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Listar documentos",
+        "operationId": "listar_documentos_endpoint_api_v1_documentos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Menor Id"
+            }
+          },
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hogar Id"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Categoria"
+            }
+          },
+          {
+            "name": "estado_flujo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado Flujo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoOut"
+                  },
+                  "title": "Response Listar Documentos Endpoint Api V1 Documentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/auditor": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Metadatos para auditor (sin contenido)",
+        "operationId": "listar_para_auditor_endpoint_api_v1_documentos_auditor_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Para Auditor Endpoint Api V1 Documentos Auditor Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/documentos/menor/{menor_id}/seccion/{seccion}": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Documentos y reportes de una sección",
+        "operationId": "seccion_expediente_endpoint_api_v1_documentos_menor__menor_id__seccion__seccion__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          },
+          {
+            "name": "seccion",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Seccion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeccionExpedienteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/reportes": {
+      "post": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Crear reporte",
+        "operationId": "crear_reporte_endpoint_api_v1_documentos_reportes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReporteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Listar reportes",
+        "operationId": "listar_reportes_endpoint_api_v1_documentos_reportes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Menor Id"
+            }
+          },
+          {
+            "name": "tipo_reporte",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo Reporte"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReporteOut"
+                  },
+                  "title": "Response Listar Reportes Endpoint Api V1 Documentos Reportes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/reportes/{reporte_id}": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Obtener reporte",
+        "operationId": "obtener_reporte_endpoint_api_v1_documentos_reportes__reporte_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reporte_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reporte Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Obtener documento (metadatos)",
+        "operationId": "obtener_documento_endpoint_api_v1_documentos__documento_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/contenido": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Descargar contenido descifrado",
+        "operationId": "descargar_documento_endpoint_api_v1_documentos__documento_id__contenido_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/enviar": {
+      "put": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Enviar a revisión",
+        "operationId": "enviar_documento_endpoint_api_v1_documentos__documento_id__enviar_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/aprobar": {
+      "put": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Aprobar documento",
+        "operationId": "aprobar_documento_endpoint_api_v1_documentos__documento_id__aprobar_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/devolver": {
+      "put": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Devolver documento",
+        "operationId": "devolver_documento_endpoint_api_v1_documentos__documento_id__devolver_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentoDevolver"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/version": {
+      "post": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Subir nueva versión",
+        "operationId": "crear_version_endpoint_api_v1_documentos__documento_id__version_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/versiones": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Listar versiones anteriores",
+        "operationId": "listar_versiones_endpoint_api_v1_documentos__documento_id__versiones_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoVersionOut"
+                  },
+                  "title": "Response Listar Versiones Endpoint Api V1 Documentos  Documento Id  Versiones Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentos/{documento_id}/versiones/{version}/contenido": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Descargar una versión anterior",
+        "operationId": "descargar_version_endpoint_api_v1_documentos__documento_id__versiones__version__contenido_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/inventario/_estado": {
       "get": {
         "tags": [
@@ -2805,6 +3624,350 @@
           "created_at"
         ],
         "title": "AuditoriaAccesoOut"
+      },
+      "Body_crear_documento_endpoint_api_v1_documentos_post": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
+          },
+          "migracion": {
+            "type": "boolean",
+            "title": "Migracion",
+            "default": false
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo",
+          "categoria",
+          "titulo"
+        ],
+        "title": "Body_crear_documento_endpoint_api_v1_documentos_post"
+      },
+      "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo"
+        ],
+        "title": "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
+      },
+      "DocumentoDevolver": {
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "title": "DocumentoDevolver"
+      },
+      "DocumentoOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "estado_flujo": {
+            "type": "string",
+            "title": "Estado Flujo"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "hash_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash Sha256"
+          },
+          "sensible": {
+            "type": "boolean",
+            "title": "Sensible"
+          },
+          "creado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Creado Por"
+          },
+          "nombre_original": {
+            "type": "string",
+            "title": "Nombre Original"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "tamanio_bytes": {
+            "type": "integer",
+            "title": "Tamanio Bytes"
+          },
+          "revisado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado Por"
+          },
+          "revisado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado En"
+          },
+          "motivo_devolucion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Devolucion"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "categoria",
+          "titulo",
+          "estado_flujo",
+          "version",
+          "sensible",
+          "creado_por",
+          "nombre_original",
+          "mime_type",
+          "tamanio_bytes",
+          "created_at"
+        ],
+        "title": "DocumentoOut"
+      },
+      "DocumentoVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "documento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Documento Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "hash_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hash Sha256"
+          },
+          "nombre_original": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Original"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "tamanio_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanio Bytes"
+          },
+          "estado_flujo": {
+            "type": "string",
+            "title": "Estado Flujo"
+          },
+          "creado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creado Por"
+          },
+          "revisado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisado Por"
+          },
+          "motivo_devolucion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Devolucion"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "documento_id",
+          "version",
+          "estado_flujo",
+          "created_at"
+        ],
+        "title": "DocumentoVersionOut"
       },
       "EstadoCertificacion": {
         "type": "string",
@@ -4019,6 +5182,144 @@
         },
         "type": "object",
         "title": "ProfesionalUpdate"
+      },
+      "ReporteCreate": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "tipo_reporte": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Tipo Reporte"
+          },
+          "contenido": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contenido"
+          },
+          "referencia_archivo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referencia Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "tipo_reporte"
+        ],
+        "title": "ReporteCreate"
+      },
+      "ReporteOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "autor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Autor Id"
+          },
+          "tipo_autor": {
+            "type": "string",
+            "title": "Tipo Autor"
+          },
+          "tipo_reporte": {
+            "type": "string",
+            "title": "Tipo Reporte"
+          },
+          "contenido": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Contenido"
+          },
+          "referencia_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referencia Archivo"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "menor_id",
+          "autor_id",
+          "tipo_autor",
+          "tipo_reporte",
+          "contenido",
+          "version",
+          "created_at"
+        ],
+        "title": "ReporteOut"
+      },
+      "SeccionExpedienteOut": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "seccion": {
+            "type": "string",
+            "title": "Seccion"
+          },
+          "documentos": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentoOut"
+            },
+            "type": "array",
+            "title": "Documentos"
+          },
+          "reportes": {
+            "items": {
+              "$ref": "#/components/schemas/ReporteOut"
+            },
+            "type": "array",
+            "title": "Reportes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "seccion",
+          "documentos",
+          "reportes"
+        ],
+        "title": "SeccionExpedienteOut",
+        "description": "Agregador de `Documento` + `Reporte` de una sección (salud/psicosocial/familia)."
       },
       "SeccionSensible": {
         "type": "string",

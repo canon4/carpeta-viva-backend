@@ -2,7 +2,7 @@
 from app.modules.asignaciones.models import Asignacion, AsignacionHistory  # noqa: F401
 from app.modules.auditoria.models import AuditoriaAcceso  # noqa: F401
 from app.modules.auth.models import Usuario  # noqa: F401
-from app.modules.documentos.models import Documento, Reporte  # noqa: F401
+from app.modules.documentos.models import Documento, DocumentoVersion, Reporte  # noqa: F401
 from app.modules.madres.models import MadreSustituta  # noqa: F401
 from app.modules.menores.models import Menor, MenorFamiliar, MenorHistory, PermisoExpediente  # noqa: F401
 from app.modules.profesionales.models import MenorProfesional, Profesional  # noqa: F401

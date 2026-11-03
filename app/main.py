@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import JWT_SECRET_POR_DEFECTO, get_settings
+from app.core.config import ARCHIVOS_CLAVE_POR_DEFECTO, JWT_SECRET_POR_DEFECTO, get_settings
 from app.modules.registry import routers
 
 VERSION = "0.1.0"
@@ -11,6 +11,8 @@ def create_app() -> FastAPI:
     settings = get_settings()
     if settings.environment == "production" and settings.jwt_secret == JWT_SECRET_POR_DEFECTO:
         raise RuntimeError("JWT_SECRET debe definirse en producción")
+    if settings.environment == "production" and settings.archivos_clave_maestra == ARCHIVOS_CLAVE_POR_DEFECTO:
+        raise RuntimeError("ARCHIVOS_CLAVE_MAESTRA debe definirse en producción")
 
     app = FastAPI(
         title=settings.app_name,
