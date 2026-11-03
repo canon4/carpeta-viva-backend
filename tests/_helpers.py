@@ -72,13 +72,14 @@ def vincular_hogar_madre(session_factory, hogar_id, madre_id):
         s.commit()
 
 
-def crear_profesional(session_factory, usuario_id, cargo, nombres="Profesional sintético"):
+def crear_profesional(session_factory, usuario_id, cargo, nombres="Profesional sintético", telefono=None):
     with session_factory() as s:
         profesional = Profesional(
             usuario_id=uuid.UUID(usuario_id) if usuario_id else None,
             nombres=nombres,
             apellidos="Prueba",
             cargo=cargo,
+            telefono=telefono,
         )
         s.add(profesional)
         s.commit()

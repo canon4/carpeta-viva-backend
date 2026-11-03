@@ -15,3 +15,11 @@ class UsuarioRepository:
 
     def por_id(self, usuario_id: uuid.UUID) -> Usuario | None:
         return self.session.get(Usuario, usuario_id)
+
+    def listar_por_rol(self, rol: str, zona_id: uuid.UUID | None = None) -> list[Usuario]:
+        """Usado por `alertas` (ADR-0009) para resolver destinatarios de respaldo: coordinador de
+        una zona o, en su defecto, cualquier admin."""
+        consulta = select(Usuario).where(Usuario.rol == rol, Usuario.activo.is_(True))
+        if zona_id is not None:
+            consulta = consulta.where(Usuario.zona_id == zona_id)
+        return list(self.session.scalars(consulta))

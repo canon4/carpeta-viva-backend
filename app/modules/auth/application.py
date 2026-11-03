@@ -20,3 +20,9 @@ def iniciar_sesion(session: Session, email: str, password: str, ip: str | None =
         raise no_autenticado()
     registrar_acceso(session, accion="login_ok", usuario_id=usuario.id, ip=ip)
     return create_access_token(str(usuario.id), usuario.rol)
+
+
+def usuarios_por_rol(session: Session, rol: str, zona_id=None) -> list:
+    """Wrapper público para otros módulos (p. ej. `alertas`, destinatarios de respaldo de
+    evasión, ADR-0009) que necesitan resolver usuarios por rol sin tocar el repositorio ajeno."""
+    return UsuarioRepository(session).listar_por_rol(rol, zona_id=zona_id)

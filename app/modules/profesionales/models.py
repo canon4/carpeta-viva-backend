@@ -15,6 +15,7 @@ class Profesional(UuidPk, Timestamps, Base):
     cargo: Mapped[str] = mapped_column(String(40))  # defensor, psicosocial, nutricion, trabajo_social
     especialidad: Mapped[str | None] = mapped_column(String(120), nullable=True)
     numero_registro: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    telefono: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
 
 class MenorProfesional(UuidPk, Base):

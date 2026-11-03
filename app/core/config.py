@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # disco con cargas repetidas (DoS de almacenamiento). 25 MB cubre holgadamente fotos de
     # celular, PDFs e imágenes de documentos de identidad digitalizados.
     archivos_tamanio_maximo_bytes: int = 25 * 1024 * 1024
+    # Número de la Policía de Infancia y Adolescencia mostrado en la pantalla de evasión
+    # (ADR-0009, sección 1): un solo operador/municipio hoy, no se migra a tabla todavía.
+    policia_infancia_telefono: str = "cambiar-numero-real"
 
 
 @lru_cache

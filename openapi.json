@@ -2950,6 +2950,468 @@
         }
       }
     },
+    "/api/v1/inventario/items": {
+      "post": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Crear ítem de inventario",
+        "operationId": "crear_item_endpoint_api_v1_inventario_items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventarioItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Listar ítems de inventario de un hogar",
+        "operationId": "listar_items_endpoint_api_v1_inventario_items_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hogar Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventarioItemOut"
+                  },
+                  "title": "Response Listar Items Endpoint Api V1 Inventario Items Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/items/{item_id}": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Actualizar ítem de inventario",
+        "operationId": "actualizar_item_endpoint_api_v1_inventario_items__item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventarioItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/convivientes": {
+      "post": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Registrar conviviente",
+        "operationId": "crear_conviviente_endpoint_api_v1_inventario_convivientes_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvivienteCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvivienteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Listar convivientes de un hogar",
+        "operationId": "listar_convivientes_endpoint_api_v1_inventario_convivientes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hogar Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConvivienteOut"
+                  },
+                  "title": "Response Listar Convivientes Endpoint Api V1 Inventario Convivientes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/convivientes/{conviviente_id}": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Actualizar conviviente (incluye desactivar)",
+        "operationId": "actualizar_conviviente_endpoint_api_v1_inventario_convivientes__conviviente_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conviviente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conviviente Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvivienteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvivienteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/red-apoyo": {
+      "post": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Registrar contacto de red de apoyo",
+        "operationId": "crear_red_apoyo_endpoint_api_v1_inventario_red_apoyo_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedApoyoCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedApoyoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Listar red de apoyo de un hogar",
+        "operationId": "listar_red_apoyo_endpoint_api_v1_inventario_red_apoyo_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hogar Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RedApoyoOut"
+                  },
+                  "title": "Response Listar Red Apoyo Endpoint Api V1 Inventario Red Apoyo Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/red-apoyo/{contacto_id}": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Actualizar contacto de red de apoyo",
+        "operationId": "actualizar_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contacto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contacto Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedApoyoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedApoyoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/alimentos/_estado": {
       "get": {
         "tags": [
@@ -2968,6 +3430,256 @@
                   },
                   "type": "object",
                   "title": "Response Estado Api V1 Alimentos  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos": {
+      "post": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Registrar ingreso de alimento",
+        "operationId": "crear_alimento_endpoint_api_v1_alimentos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlimentoItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Listar alimentos de un hogar",
+        "operationId": "listar_alimentos_endpoint_api_v1_alimentos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hogar Id"
+            }
+          },
+          {
+            "name": "perecedero",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Perecedero"
+            }
+          },
+          {
+            "name": "consumido",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Consumido"
+            }
+          },
+          {
+            "name": "vencidos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vencidos"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlimentoItemOut"
+                  },
+                  "title": "Response Listar Alimentos Endpoint Api V1 Alimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/{item_id}": {
+      "put": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Actualizar alimento",
+        "operationId": "actualizar_alimento_endpoint_api_v1_alimentos__item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlimentoItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/{item_id}/consumido": {
+      "put": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Marcar alimento como consumido",
+        "operationId": "marcar_consumido_endpoint_api_v1_alimentos__item_id__consumido_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3000,6 +3712,333 @@
         }
       }
     },
+    "/api/v1/citas": {
+      "post": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Crear cita",
+        "operationId": "crear_cita_endpoint_api_v1_citas_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitaCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Listar citas",
+        "operationId": "listar_citas_endpoint_api_v1_citas_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Menor Id"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CitaOut"
+                  },
+                  "title": "Response Listar Citas Endpoint Api V1 Citas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/citas/proximas": {
+      "get": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Próximas citas pendientes",
+        "operationId": "listar_proximas_endpoint_api_v1_citas_proximas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CitaOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Proximas Endpoint Api V1 Citas Proximas Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/citas/{cita_id}": {
+      "get": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Obtener cita",
+        "operationId": "obtener_cita_endpoint_api_v1_citas__cita_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cita_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Cita Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Reprogramar cita",
+        "operationId": "actualizar_cita_endpoint_api_v1_citas__cita_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cita_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Cita Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitaUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/citas/{cita_id}/estado": {
+      "put": {
+        "tags": [
+          "Citas y Recordatorios"
+        ],
+        "summary": "Cambiar estado de la cita",
+        "operationId": "cambiar_estado_cita_endpoint_api_v1_citas__cita_id__estado_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cita_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Cita Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CitaEstadoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/alertas/_estado": {
       "get": {
         "tags": [
@@ -3018,6 +4057,381 @@
                   },
                   "type": "object",
                   "title": "Response Estado Api V1 Alertas  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertas/evasion": {
+      "post": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Reportar evasión",
+        "operationId": "reportar_evasion_endpoint_api_v1_alertas_evasion_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvasionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvasionReportadaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alertas/mis-pendientes": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Mis alertas pendientes",
+        "operationId": "mis_pendientes_endpoint_api_v1_alertas_mis_pendientes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaOut"
+                  },
+                  "type": "array",
+                  "title": "Response Mis Pendientes Endpoint Api V1 Alertas Mis Pendientes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alertas/panel": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Panel de alertas activas",
+        "operationId": "panel_endpoint_api_v1_alertas_panel_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaOut"
+                  },
+                  "type": "array",
+                  "title": "Response Panel Endpoint Api V1 Alertas Panel Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alertas/generar-automaticas": {
+      "post": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Generar alertas automáticas (RF9)",
+        "operationId": "generar_automaticas_endpoint_api_v1_alertas_generar_automaticas_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaOut"
+                  },
+                  "type": "array",
+                  "title": "Response Generar Automaticas Endpoint Api V1 Alertas Generar Automaticas Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/alertas": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Listar alertas",
+        "operationId": "listar_alertas_endpoint_api_v1_alertas_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Menor Id"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlertaOut"
+                  },
+                  "title": "Response Listar Alertas Endpoint Api V1 Alertas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertas/{alerta_id}": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Obtener alerta",
+        "operationId": "obtener_alerta_endpoint_api_v1_alertas__alerta_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alerta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alerta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertas/{alerta_id}/visto": {
+      "put": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Marcar como vista (destinatario)",
+        "operationId": "marcar_visto_endpoint_api_v1_alertas__alerta_id__visto_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alerta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alerta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Marcar Visto Endpoint Api V1 Alertas  Alerta Id  Visto Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alertas/{alerta_id}/cerrar": {
+      "put": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Cerrar alerta",
+        "operationId": "cerrar_alerta_endpoint_api_v1_alertas__alerta_id__cerrar_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alerta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alerta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3260,6 +4674,342 @@
   },
   "components": {
     "schemas": {
+      "AlertaDestinatarioOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "visto_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visto En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id"
+        ],
+        "title": "AlertaDestinatarioOut"
+      },
+      "AlertaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "origen": {
+            "type": "string",
+            "title": "Origen"
+          },
+          "generada_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generada Por"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "detalle": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detalle"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "destinatarios": {
+            "items": {
+              "$ref": "#/components/schemas/AlertaDestinatarioOut"
+            },
+            "type": "array",
+            "title": "Destinatarios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "menor_id",
+          "origen",
+          "descripcion",
+          "estado",
+          "created_at"
+        ],
+        "title": "AlertaOut"
+      },
+      "AlimentoItemCreate": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Descripcion"
+          },
+          "fecha_ingreso": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Ingreso"
+          },
+          "perecedero": {
+            "type": "boolean",
+            "title": "Perecedero"
+          },
+          "fecha_vencimiento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vencimiento"
+          },
+          "cantidad": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Cantidad"
+          },
+          "unidad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "descripcion",
+          "fecha_ingreso",
+          "perecedero",
+          "cantidad"
+        ],
+        "title": "AlimentoItemCreate"
+      },
+      "AlimentoItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "fecha_ingreso": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Ingreso"
+          },
+          "perecedero": {
+            "type": "boolean",
+            "title": "Perecedero"
+          },
+          "fecha_vencimiento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vencimiento"
+          },
+          "cantidad": {
+            "type": "number",
+            "title": "Cantidad"
+          },
+          "unidad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad"
+          },
+          "consumido": {
+            "type": "boolean",
+            "title": "Consumido"
+          },
+          "registrado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Registrado Por"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "hogar_id",
+          "descripcion",
+          "fecha_ingreso",
+          "perecedero",
+          "cantidad",
+          "consumido",
+          "registrado_por",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AlimentoItemOut"
+      },
+      "AlimentoItemUpdate": {
+        "properties": {
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "fecha_ingreso": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Ingreso"
+          },
+          "perecedero": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perecedero"
+          },
+          "fecha_vencimiento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vencimiento"
+          },
+          "cantidad": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cantidad"
+          },
+          "unidad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad"
+          }
+        },
+        "type": "object",
+        "title": "AlimentoItemUpdate"
+      },
       "AsignacionCerrar": {
         "properties": {
           "fecha_fin": {
@@ -3703,6 +5453,444 @@
         ],
         "title": "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
       },
+      "CitaCreate": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "tipo": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Tipo"
+          },
+          "fecha_hora": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora"
+          },
+          "lugar": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lugar"
+          },
+          "notas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "tipo",
+          "fecha_hora"
+        ],
+        "title": "CitaCreate"
+      },
+      "CitaEstadoUpdate": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado"
+        ],
+        "title": "CitaEstadoUpdate"
+      },
+      "CitaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "fecha_hora": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora"
+          },
+          "lugar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lugar"
+          },
+          "notas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "registrado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Registrado Por"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "menor_id",
+          "tipo",
+          "fecha_hora",
+          "estado",
+          "registrado_por",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CitaOut"
+      },
+      "CitaUpdate": {
+        "properties": {
+          "fecha_hora": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Hora"
+          },
+          "lugar": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lugar"
+          },
+          "notas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas"
+          }
+        },
+        "type": "object",
+        "title": "CitaUpdate"
+      },
+      "ContactoEmergencia": {
+        "properties": {
+          "rol_asignado": {
+            "type": "string",
+            "title": "Rol Asignado"
+          },
+          "nombres": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombres"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rol_asignado"
+        ],
+        "title": "ContactoEmergencia",
+        "description": "Teléfono del profesional realmente asignado; si no está registrado se dice explícitamente\n(ADR-0009, sección 1) en vez de omitir el campo en silencio."
+      },
+      "ContactosEmergenciaOut": {
+        "properties": {
+          "policia_infancia_telefono": {
+            "type": "string",
+            "title": "Policia Infancia Telefono"
+          },
+          "contactos": {
+            "items": {
+              "$ref": "#/components/schemas/ContactoEmergencia"
+            },
+            "type": "array",
+            "title": "Contactos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policia_infancia_telefono"
+        ],
+        "title": "ContactosEmergenciaOut"
+      },
+      "ConvivienteCreate": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "nombres": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nombres"
+          },
+          "relacion_con_madre": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Relacion Con Madre"
+          },
+          "fecha_desde": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Desde"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "nombres",
+          "relacion_con_madre"
+        ],
+        "title": "ConvivienteCreate"
+      },
+      "ConvivienteOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "relacion_con_madre": {
+            "type": "string",
+            "title": "Relacion Con Madre"
+          },
+          "fecha_desde": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Desde"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "hogar_id",
+          "nombres",
+          "relacion_con_madre",
+          "activo",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ConvivienteOut"
+      },
+      "ConvivienteUpdate": {
+        "properties": {
+          "nombres": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombres"
+          },
+          "relacion_con_madre": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relacion Con Madre"
+          },
+          "fecha_desde": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Desde"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "ConvivienteUpdate"
+      },
       "DocumentoDevolver": {
         "properties": {
           "motivo": {
@@ -4006,6 +6194,43 @@
           "desconocido"
         ],
         "title": "EstadoVital"
+      },
+      "EvasionCreate": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Descripcion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "descripcion"
+        ],
+        "title": "EvasionCreate"
+      },
+      "EvasionReportadaOut": {
+        "properties": {
+          "alerta": {
+            "$ref": "#/components/schemas/AlertaOut"
+          },
+          "contactos_emergencia": {
+            "$ref": "#/components/schemas/ContactosEmergenciaOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alerta",
+          "contactos_emergencia"
+        ],
+        "title": "EvasionReportadaOut"
       },
       "FamiliarCreate": {
         "properties": {
@@ -4344,6 +6569,146 @@
         },
         "type": "object",
         "title": "HogarUpdate"
+      },
+      "InventarioItemCreate": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "tipo": {
+            "type": "string",
+            "pattern": "^(cama|mueble|otro)$",
+            "title": "Tipo"
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Descripcion"
+          },
+          "cantidad": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Cantidad",
+            "default": 1
+          },
+          "estado": {
+            "type": "string",
+            "pattern": "^(bueno|regular|malo|retirado)$",
+            "title": "Estado",
+            "default": "bueno"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "tipo",
+          "descripcion"
+        ],
+        "title": "InventarioItemCreate"
+      },
+      "InventarioItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "cantidad": {
+            "type": "integer",
+            "title": "Cantidad"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "registrado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Registrado Por"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "hogar_id",
+          "tipo",
+          "descripcion",
+          "cantidad",
+          "estado",
+          "registrado_por",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InventarioItemOut"
+      },
+      "InventarioItemUpdate": {
+        "properties": {
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "cantidad": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cantidad"
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(bueno|regular|malo|retirado)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "title": "InventarioItemUpdate"
       },
       "LoginRequest": {
         "properties": {
@@ -5041,6 +7406,18 @@
               }
             ],
             "title": "Numero Registro"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
           }
         },
         "type": "object",
@@ -5103,6 +7480,17 @@
               }
             ],
             "title": "Numero Registro"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
           }
         },
         "type": "object",
@@ -5178,10 +7566,210 @@
               }
             ],
             "title": "Numero Registro"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
           }
         },
         "type": "object",
         "title": "ProfesionalUpdate"
+      },
+      "RedApoyoCreate": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "nombres": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Nombres"
+          },
+          "relacion": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Relacion"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "nombres",
+          "relacion"
+        ],
+        "title": "RedApoyoCreate"
+      },
+      "RedApoyoOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "nombres": {
+            "type": "string",
+            "title": "Nombres"
+          },
+          "relacion": {
+            "type": "string",
+            "title": "Relacion"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "hogar_id",
+          "nombres",
+          "relacion",
+          "activo",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RedApoyoOut"
+      },
+      "RedApoyoUpdate": {
+        "properties": {
+          "nombres": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombres"
+          },
+          "relacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relacion"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "observaciones": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observaciones"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "RedApoyoUpdate"
       },
       "ReporteCreate": {
         "properties": {

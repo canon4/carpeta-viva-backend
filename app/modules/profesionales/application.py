@@ -22,6 +22,7 @@ def crear_profesional(session: Session, datos: ProfesionalCreate, usuario_id: uu
         cargo=datos.cargo,
         especialidad=datos.especialidad,
         numero_registro=datos.numero_registro,
+        telefono=datos.telefono,
     )
     profesional = ProfesionalRepository(session).crear(profesional)
     registrar_acceso(session, accion="profesional_creado", usuario_id=usuario_id, recurso=str(profesional.id))
@@ -53,6 +54,8 @@ def actualizar_profesional(
         profesional.especialidad = datos.especialidad
     if datos.numero_registro is not None:
         profesional.numero_registro = datos.numero_registro
+    if datos.telefono is not None:
+        profesional.telefono = datos.telefono
     profesional = ProfesionalRepository(session).guardar(profesional)
     registrar_acceso(session, accion="profesional_actualizado", usuario_id=usuario_id, recurso=str(profesional.id))
     return profesional

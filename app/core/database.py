@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Uuid, create_engine, func
+from sqlalchemy import DateTime, Uuid, create_engine, event, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from .config import get_settings
@@ -30,6 +30,18 @@ def get_engine():
     global _engine, _session_factory
     if _engine is None:
         _engine = create_engine(get_settings().database_url, pool_pre_ping=True)
+        if _engine.dialect.name == "postgresql":
+            # Fuerza UTC en cada conexión nueva. Varias comparaciones de fecha (p. ej. `citas`
+            # visita_vencida, RF9) hacen `columna_timestamptz < ahora_naive_utc` en SQL; sin esto,
+            # PostgreSQL interpreta el valor naive según el `TimeZone` de sesión del servidor, que
+            # no está garantizado en UTC (depende del contenedor/host), e introduciría un
+            # desfase horario real sin que el código lo note.
+            @event.listens_for(_engine, "connect")
+            def _forzar_utc(dbapi_connection, connection_record):  # noqa: ARG001
+                cursor = dbapi_connection.cursor()
+                cursor.execute("SET TIME ZONE 'UTC'")
+                cursor.close()
+
         _session_factory = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
     return _engine
 

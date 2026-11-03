@@ -14,6 +14,7 @@ class ProfesionalCreate(BaseModel):
     cargo: str = Field(min_length=1, max_length=40)
     especialidad: str | None = Field(default=None, max_length=120)
     numero_registro: str | None = Field(default=None, max_length=60)
+    telefono: str | None = Field(default=None, max_length=30)
 
 
 class ProfesionalUpdate(BaseModel):
@@ -22,6 +23,7 @@ class ProfesionalUpdate(BaseModel):
     cargo: str | None = Field(default=None, min_length=1, max_length=40)
     especialidad: str | None = Field(default=None, max_length=120)
     numero_registro: str | None = Field(default=None, max_length=60)
+    telefono: str | None = Field(default=None, max_length=30)
 
 
 class ProfesionalOut(BaseModel):
@@ -34,3 +36,4 @@ class ProfesionalOut(BaseModel):
     cargo: str
     especialidad: str | None = None
     numero_registro: str | None = None
+    telefono: str | None = None

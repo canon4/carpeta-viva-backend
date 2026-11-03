@@ -1,6 +1,10 @@
 """Zonas y Hogares: Casos de uso.
 
 Organiza los hogares sustitutos por zona y guarda los datos de cada hogar.
+
+Las importaciones de otros módulos (`madres`, `profesionales`, `asignaciones`) se hacen dentro
+de cada función para evitar ciclos de importación entre capas de aplicación hermanas, igual que
+en `menores`/`asignaciones`/`documentos`.
 """
 import uuid
 
@@ -8,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import registrar_acceso
 from app.core.errors import no_encontrado
+from app.modules.auth.domain import Rol
 
 from .domain import validar_capacidad
 from .models import HogarSustituto, Zona
@@ -83,3 +88,45 @@ def actualizar_hogar(session: Session, hogar_id: uuid.UUID, datos: HogarUpdate, 
     hogar = HogarRepository(session).guardar(hogar)
     registrar_acceso(session, accion="hogar_actualizado", usuario_id=usuario_id, recurso=str(hogar.id))
     return hogar
+
+
+def _profesional_tiene_menor_en_hogar(session: Session, usuario_id: uuid.UUID, hogar_id: uuid.UUID) -> bool:
+    """¿El profesional/defensor autenticado tiene algún menor asignado cuya asignación vigente
+    apunta a ese hogar? (ADR-0009, sección 0)."""
+    from app.modules.asignaciones.application import vigente_de_menor
+    from app.modules.profesionales.application import menores_asignados_a_profesional, profesional_de_usuario
+
+    profesional = profesional_de_usuario(session, usuario_id)
+    if profesional is None:
+        return False
+    for mp in menores_asignados_a_profesional(session, profesional.id):
+        vigente = vigente_de_menor(session, mp.menor_id)
+        if vigente is not None and vigente.hogar_id == hogar_id:
+            return True
+    return False
+
+
+def puede_ver_hogar(session: Session, usuario, hogar_id: uuid.UUID) -> bool:
+    """Autorización de lectura por hogar (ADR-0009, sección 0), reutilizada por `inventario` y
+    `alimentos` (y, en una limpieza futura no bloqueante, por `documentos`)."""
+    rol = usuario.rol
+    if rol in (Rol.ADMIN.value, Rol.AUDITOR.value):
+        return True
+    hogar = obtener_hogar(session, hogar_id)
+    if rol == Rol.COORDINADOR.value:
+        return usuario.zona_id is not None and hogar.zona_id == usuario.zona_id
+    if rol == Rol.MADRE.value:
+        from app.modules.madres.application import madre_de_usuario
+
+        madre = madre_de_usuario(session, usuario.id)
+        return madre is not None and hogar.madre_id == madre.id
+    if rol in (Rol.PROFESIONAL.value, Rol.DEFENSOR.value):
+        return _profesional_tiene_menor_en_hogar(session, usuario.id, hogar_id)
+    return False
+
+
+def puede_gestionar_hogar(session: Session, usuario, hogar_id: uuid.UUID) -> bool:
+    """Igual que `puede_ver_hogar` pero excluye al auditor (nunca crea/edita, solo lee)."""
+    if usuario.rol == Rol.AUDITOR.value:
+        return False
+    return puede_ver_hogar(session, usuario, hogar_id)
