@@ -7,3 +7,7 @@ def no_autenticado(detalle: str = "Credenciales inválidas") -> HTTPException:
 
 def prohibido(detalle: str = "No tiene permiso para esta acción") -> HTTPException:
     return HTTPException(status.HTTP_403_FORBIDDEN, detalle)
+
+
+def no_encontrado(detalle: str = "Recurso no encontrado") -> HTTPException:
+    return HTTPException(status.HTTP_404_NOT_FOUND, detalle)

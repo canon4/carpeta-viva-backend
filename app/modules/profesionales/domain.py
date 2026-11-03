@@ -1,4 +1,12 @@
 """Profesionales: Entidades, objetos de valor y reglas de negocio.
 
-Defensor, psicosocial y nutricionista de cada menor; base de permisos y destinatarios de alertas.
+Datos del personal profesional (defensor, psicosocial, nutrición, trabajo social).
 """
+from enum import Enum
+
+
+class CargoProfesional(str, Enum):
+    DEFENSOR = "defensor"
+    PSICOSOCIAL = "psicosocial"
+    NUTRICION = "nutricion"
+    TRABAJO_SOCIAL = "trabajo_social"
