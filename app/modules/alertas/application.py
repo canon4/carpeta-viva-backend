@@ -188,6 +188,7 @@ def _puede_cerrar_alerta(session: Session, usuario, alerta: Alerta) -> bool:
 # ---------------------------------------------------------------------------
 
 def reportar_evasion(session: Session, usuario, datos: EvasionCreate) -> tuple[Alerta, ContactosEmergenciaOut]:
+    from app.modules.archivo.application import esta_archivado
     from app.modules.menores.application import puede_ver_menor
 
     if usuario.rol == Rol.AUDITOR.value or not puede_ver_menor(session, usuario, datos.menor_id):
@@ -195,6 +196,11 @@ def reportar_evasion(session: Session, usuario, datos: EvasionCreate) -> tuple[A
             session, accion="evasion_reporte_denegado", usuario_id=usuario.id, menor_id=datos.menor_id
         )
         raise prohibido()
+    if esta_archivado(session, datos.menor_id):
+        registrar_acceso(
+            session, accion="evasion_reporte_denegado_archivado", usuario_id=usuario.id, menor_id=datos.menor_id
+        )
+        raise prohibido("El expediente está archivado; no se pueden crear alertas nuevas")
 
     alerta = Alerta(
         tipo="evasion",
@@ -234,6 +240,12 @@ def reportar_evasion(session: Session, usuario, datos: EvasionCreate) -> tuple[A
 # ---------------------------------------------------------------------------
 # Lectura
 # ---------------------------------------------------------------------------
+
+def listar_alertas_interno(session: Session, menor_id: uuid.UUID) -> list[Alerta]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2): incluye alertas activas y cerradas. No exponer en `api.py`."""
+    return AlertaRepository(session).listar(menor_id=menor_id)
+
 
 def listar_alertas(
     session: Session,
@@ -343,11 +355,86 @@ def _generar_visita_vencida_automaticas(session: Session) -> list[Alerta]:
     return creadas
 
 
+def _generar_documento_faltante_automaticas(session: Session) -> list[Alerta]:
+    """ADR-0010, sección 1.7: "sin informe psicosocial en 60 días", conectada aquí con el mismo
+    mecanismo de generación automática que ya existe para `visita_vencida` (ADR-0009). Idempotente:
+    no duplica una alerta activa ya abierta para el mismo menor y categoría."""
+    from app.modules.ia.application import evaluar_documento_faltante
+
+    existentes = AlertaRepository(session).listar(tipo="documento_faltante", estado="activa")
+    menores_con_alerta = {
+        existente.menor_id
+        for existente in existentes
+        if existente.detalle and existente.detalle.get("categoria") == "psicosocial"
+    }
+
+    creadas: list[Alerta] = []
+    for menor_id in evaluar_documento_faltante(session):
+        if menor_id in menores_con_alerta:
+            continue
+        alerta = Alerta(
+            tipo="documento_faltante",
+            menor_id=menor_id,
+            origen="automatica",
+            generada_por=None,
+            descripcion="Sin informe psicosocial registrado en los últimos 60 días",
+            detalle={"categoria": "psicosocial", "plazo_dias": 60},
+            estado="activa",
+        )
+        alerta = AlertaRepository(session).crear(alerta)
+        _crear_destinatarios(session, alerta)
+        creadas.append(alerta)
+    return creadas
+
+
+def _generar_indexacion_pendiente_automaticas(session: Session) -> list[Alerta]:
+    """ADR-0010, sección 1.3 (corrección de seguridad): si la indexación de IA en segundo plano
+    falla o se pierde a medias, un documento/reporte puede quedar sin fragmentos indefinidamente
+    sin que nadie lo note. Esta alerta hace visible esa falla (panel de `admin`, que ve todas las
+    alertas activas sin filtrar por destinatario) sin depender de que alguien ejecute
+    `POST /ia/mantenimiento/reindexar-pendientes` por iniciativa propia."""
+    from app.modules.ia.application import evaluar_indexacion_pendiente
+
+    existentes = AlertaRepository(session).listar(tipo="indexacion_pendiente", estado="activa")
+    recursos_con_alerta = {
+        (existente.detalle.get("tipo_recurso"), existente.detalle.get("recurso_id"))
+        for existente in existentes
+        if existente.detalle
+    }
+
+    creadas: list[Alerta] = []
+    for tipo_recurso, recurso_id, menor_id in evaluar_indexacion_pendiente(session):
+        clave = (tipo_recurso, str(recurso_id))
+        if clave in recursos_con_alerta:
+            continue
+        alerta = Alerta(
+            tipo="indexacion_pendiente",
+            menor_id=menor_id,
+            origen="automatica",
+            generada_por=None,
+            descripcion=f"{tipo_recurso.capitalize()} sin indexar para búsqueda de IA hace más de una hora",
+            detalle={"tipo_recurso": tipo_recurso, "recurso_id": str(recurso_id)},
+            estado="activa",
+        )
+        alerta = AlertaRepository(session).crear(alerta)
+        _crear_destinatarios(session, alerta)
+        creadas.append(alerta)
+    return creadas
+
+
+def _generar_automaticas_todas(session: Session) -> list[Alerta]:
+    return (
+        _generar_visita_vencida_automaticas(session)
+        + _generar_documento_faltante_automaticas(session)
+        + _generar_indexacion_pendiente_automaticas(session)
+    )
+
+
 def generar_automaticas(session: Session, usuario) -> list[Alerta]:
     if usuario.rol not in (Rol.COORDINADOR.value, Rol.ADMIN.value):
         registrar_acceso(session, accion="alertas_generacion_denegada", usuario_id=usuario.id)
         raise prohibido()
-    creadas = _generar_visita_vencida_automaticas(session)
+    creadas = _generar_automaticas_todas(session)
     for alerta in creadas:
         _adjuntar_destinatarios(session, alerta)
     registrar_acceso(session, accion="alertas_generadas_automaticas", usuario_id=usuario.id)
@@ -357,7 +444,7 @@ def generar_automaticas(session: Session, usuario) -> list[Alerta]:
 def panel(session: Session, usuario) -> list[Alerta]:
     """GET /alertas/panel: dispara el barrido automático y devuelve alertas activas visibles
     (coordinador por zona, profesional por sus menores asignados, admin todas)."""
-    _generar_visita_vencida_automaticas(session)
+    _generar_automaticas_todas(session)
 
     rol = usuario.rol
     activas = AlertaRepository(session).listar(estado="activa")

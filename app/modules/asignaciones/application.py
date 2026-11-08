@@ -245,6 +245,12 @@ def vigente_de_menor(session: Session, menor_id: uuid.UUID) -> Asignacion | None
     return AsignacionRepository(session).vigente_por_menor(menor_id)
 
 
+def historial_asignacion_interno(session: Session, asignacion_id: uuid.UUID) -> list[AsignacionHistory]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2). No exponer en `api.py`."""
+    return AsignacionHistoryRepository(session).listar_por_asignacion(asignacion_id)
+
+
 def vigente_de_menor_visible(session: Session, usuario, menor_id: uuid.UUID) -> Asignacion | None:
     """Para el endpoint público: solo responde si el usuario puede ver ese menor. Se reutiliza
     `menores.application.puede_ver_menor`, que ya cubre las cinco reglas de fila de ADR-0007

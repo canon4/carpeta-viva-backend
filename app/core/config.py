@@ -31,6 +31,35 @@ class Settings(BaseSettings):
     # (ADR-0009, sección 1): un solo operador/municipio hoy, no se migra a tabla todavía.
     policia_infancia_telefono: str = "cambiar-numero-real"
 
+    # Asistente de IA (ADR-0010, sección 1.6): proveedor/modelo del LLM externo de generación,
+    # intercambiable detrás de `ProveedorLLM` (`app/core/ia_llm.py`). La clave nunca tiene un
+    # valor real por defecto; sin ella, `AnthropicProveedorLLM` falla explícitamente al llamar,
+    # no al arrancar (para no bloquear el resto de la API en desarrollo sin clave).
+    ia_llm_proveedor: str = "anthropic"
+    # Verificado en platform.claude.com (nov. 2026): modelo más económico/rápido de la familia
+    # Claude vigente (desde US$0.10/MTok de entrada, US$0.50/MTok de salida); revisar de nuevo
+    # si Anthropic publica una familia más nueva/barata antes de producción.
+    ia_llm_modelo: str = "claude-haiku-5-5"
+    anthropic_api_key: str | None = None
+    # Modelo de embeddings local (ADR-0010, sección 1.3): multilingüe, 384 dimensiones, sin
+    # llamada externa. Versionado en `modelo_embedding` de `fragmentos_documento` como
+    # "<nombre>@<version>" para poder reindexar todo si cambia.
+    ia_embeddings_modelo: str = "intfloat/multilingual-e5-small"
+    ia_embeddings_version: str = "1"
+    # Seudonimización (ADR-0010, sección 1.4 + revisión de seguridad): activa por defecto.
+    # Pasar a `false` requiere la pasada de NER de personas (pendiente, no implementada) y
+    # habilitación explícita de `admin`/`seguridad` con contrato de tratamiento (ADR-0002
+    # punto 4) — hoy solo hay datos sintéticos, así que esto no bloquea el prototipo, pero el
+    # valor por defecto nunca debe cambiarse sin ese requisito.
+    ia_anonimizado_por_defecto: bool = True
+    # Indexación automática en segundo plano al guardar documento/versión (sección 1.3). Se
+    # puede desactivar por configuración (p. ej. en pruebas de otros módulos que no necesitan
+    # ejercitar el pipeline de IA) sin tocar el resto del sistema.
+    ia_indexar_automaticamente: bool = True
+    # Umbral para la alerta `indexacion_pendiente` (revisión de seguridad, sección 1.3): un
+    # documento/reporte sin fragmentos indexados por más de este tiempo genera alerta.
+    ia_indexacion_pendiente_umbral_minutos: int = 60
+
 
 @lru_cache
 def get_settings() -> Settings:

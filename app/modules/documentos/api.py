@@ -1,7 +1,7 @@
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -62,6 +62,7 @@ def estado() -> dict[str, str]:
 
 @router.post("", response_model=DocumentoOut, status_code=status.HTTP_201_CREATED, summary="Crear documento")
 async def crear_documento_endpoint(
+    tareas_fondo: BackgroundTasks,
     archivo: UploadFile = File(...),
     categoria: str = Form(...),
     titulo: str = Form(...),
@@ -86,6 +87,7 @@ async def crear_documento_endpoint(
             mime_type=archivo.content_type or "application/octet-stream",
             migracion=migracion,
             motivo=motivo,
+            tareas_fondo=tareas_fondo,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
@@ -128,9 +130,12 @@ def seccion_expediente_endpoint(
 
 @router.post("/reportes", response_model=ReporteOut, status_code=status.HTTP_201_CREATED, summary="Crear reporte")
 def crear_reporte_endpoint(
-    datos: ReporteCreate, session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+    datos: ReporteCreate,
+    tareas_fondo: BackgroundTasks,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
 ) -> ReporteOut:
-    return crear_reporte(session, usuario, datos)
+    return crear_reporte(session, usuario, datos, tareas_fondo=tareas_fondo)
 
 
 @router.get("/reportes", response_model=list[ReporteOut], summary="Listar reportes")
@@ -205,6 +210,7 @@ def devolver_documento_endpoint(
 @router.post("/{documento_id}/version", response_model=DocumentoOut, summary="Subir nueva versión")
 async def crear_version_endpoint(
     documento_id: uuid.UUID,
+    tareas_fondo: BackgroundTasks,
     archivo: UploadFile = File(...),
     session: Session = Depends(get_session),
     usuario: Usuario = Depends(usuario_actual),
@@ -218,6 +224,7 @@ async def crear_version_endpoint(
             contenido=contenido,
             nombre_original=archivo.filename or "sin_nombre",
             mime_type=archivo.content_type or "application/octet-stream",
+            tareas_fondo=tareas_fondo,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))

@@ -8,3 +8,15 @@ pyjwt~=2.15
 argon2-cffi~=25.1
 cryptography~=50.0
 python-multipart~=0.0.33
+pgvector~=0.5
+# PDF simple para exportación de reportes (ADR-0010, sección 2): pura Python, sin dependencias
+# de sistema (a diferencia de WeasyPrint/wkhtmltopdf), suficiente para un reporte tabular.
+fpdf2~=2.8
+# Asistente de IA (ADR-0010, sección 1): LLM externo intercambiable (adaptador Anthropic),
+# OCR local (Tesseract vía pytesseract, requiere el binario `tesseract` instalado en el
+# sistema/contenedor con el paquete de idioma `spa`) y embeddings multilingües locales
+# (sentence-transformers, CPU, sin GPU).
+anthropic~=2.4
+pytesseract~=0.3
+Pillow~=13.0
+sentence-transformers~=6.2

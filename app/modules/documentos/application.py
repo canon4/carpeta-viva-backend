@@ -10,6 +10,7 @@ hermanas, igual que en `menores`/`asignaciones`.
 import uuid
 from datetime import datetime, timezone
 
+from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core import almacenamiento
@@ -39,6 +40,32 @@ def _documento_o_404(session: Session, documento_id: uuid.UUID) -> Documento:
     if documento is None:
         raise no_encontrado("Documento no encontrado")
     return documento
+
+
+def _programar_indexacion_documento(
+    tareas_fondo: BackgroundTasks | None, session: Session, documento_id: uuid.UUID
+) -> None:
+    """Hookea la indexación de IA (OCR + clasificación + embeddings, ADR-0010 sección 1.3) tras
+    guardar un documento o una nueva versión. `documentos` llama a `ia.application`, nunca al
+    revés (ADR-0010: "no hagas que ia dependa de documentos en sentido inverso"). Import
+    diferido, mismo patrón que el resto del módulo; `tareas_fondo` es opcional para no romper
+    llamadas internas/pruebas que no vienen de un endpoint HTTP. Se reutiliza la misma `session`
+    de la petición: en Starlette/FastAPI las tareas de `BackgroundTasks` corren antes de que la
+    dependencia `Depends(get_session)` cierre la sesión (verificado empíricamente), así que
+    sigue abierta y, en pruebas, sigue apuntando al motor SQLite aislado de esa prueba."""
+    if tareas_fondo is None or not get_settings().ia_indexar_automaticamente:
+        return
+    from app.modules.ia.application import indexar_documento_en_segundo_plano
+
+    tareas_fondo.add_task(indexar_documento_en_segundo_plano, session, documento_id)
+
+
+def _programar_indexacion_reporte(tareas_fondo: BackgroundTasks | None, session: Session, reporte_id: uuid.UUID) -> None:
+    if tareas_fondo is None or not get_settings().ia_indexar_automaticamente:
+        return
+    from app.modules.ia.application import indexar_reporte_en_segundo_plano
+
+    tareas_fondo.add_task(indexar_reporte_en_segundo_plano, session, reporte_id)
 
 
 # ---------------------------------------------------------------------------
@@ -184,11 +211,17 @@ def crear_documento(
     mime_type: str,
     migracion: bool = False,
     motivo: str | None = None,
+    tareas_fondo: BackgroundTasks | None = None,
 ) -> Documento:
     if (menor_id is None) == (hogar_id is None):
         raise ValueError("Debe indicarse exactamente uno de menor_id o hogar_id")
     if migracion and usuario.rol in (Rol.COORDINADOR.value, Rol.ADMIN.value) and not motivo:
         raise ValueError("motivo es obligatorio para documentos de migración histórica")
+    if esta_archivado(session, menor_id):
+        registrar_acceso(
+            session, accion="documento_creacion_denegada_archivado", usuario_id=usuario.id, menor_id=menor_id
+        )
+        raise prohibido("El expediente está archivado; no se pueden crear documentos nuevos")
 
     if menor_id is not None:
         estado_inicial = _resolver_creacion_menor(session, usuario, menor_id, categoria, migracion)
@@ -227,6 +260,7 @@ def crear_documento(
     registrar_acceso(
         session, accion="documento_creado", usuario_id=usuario.id, recurso=str(documento.id), menor_id=menor_id
     )
+    _programar_indexacion_documento(tareas_fondo, session, documento.id)
     return documento
 
 
@@ -350,11 +384,27 @@ def devolver_documento(session: Session, usuario, documento_id: uuid.UUID, motiv
 
 
 def crear_version(
-    session: Session, usuario, documento_id: uuid.UUID, *, contenido: bytes, nombre_original: str, mime_type: str
+    session: Session,
+    usuario,
+    documento_id: uuid.UUID,
+    *,
+    contenido: bytes,
+    nombre_original: str,
+    mime_type: str,
+    tareas_fondo: BackgroundTasks | None = None,
 ) -> Documento:
     documento = _documento_o_404(session, documento_id)
     if documento.estado_flujo not in ("borrador", "devuelto"):
         raise ValueError("Solo se puede subir una nueva versión en estado borrador o devuelto")
+    if esta_archivado(session, documento.menor_id):
+        registrar_acceso(
+            session,
+            accion="documento_version_denegada_archivado",
+            usuario_id=usuario.id,
+            recurso=str(documento.id),
+            menor_id=documento.menor_id,
+        )
+        raise prohibido("El expediente está archivado; no se pueden crear versiones nuevas")
     if not _puede_editar_documento(session, usuario, documento):
         registrar_acceso(
             session,
@@ -397,6 +447,7 @@ def crear_version(
     registrar_acceso(
         session, accion="documento_version_creada", usuario_id=usuario.id, recurso=str(documento.id), menor_id=documento.menor_id
     )
+    _programar_indexacion_documento(tareas_fondo, session, documento.id)
     return documento
 
 
@@ -444,6 +495,36 @@ def descargar_version(session: Session, usuario, documento_id: uuid.UUID, versio
     return version_obj, contenido
 
 
+def listar_documentos_interno(session: Session, menor_id: uuid.UUID) -> list[Documento]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2): incluye documentos de todas las categorías, incluidas las
+    sensibles que un coordinador no vería con `listar_documentos` normal. El llamador
+    (`archivo.application`) ya validó que quien cierra el expediente es coordinador de la
+    zona del expediente o admin. No exponer en `api.py`."""
+    return DocumentoRepository(session).listar(menor_id=menor_id)
+
+
+def listar_versiones_interno(session: Session, documento_id: uuid.UUID) -> list[DocumentoVersion]:
+    """Uso interno (sin control de autorización), mismo caso que `listar_documentos_interno`."""
+    return DocumentoVersionRepository(session).listar_por_documento(documento_id)
+
+
+def listar_reportes_interno(session: Session, menor_id: uuid.UUID) -> list[Reporte]:
+    """Uso interno (sin control de autorización), mismo caso que `listar_documentos_interno`."""
+    return ReporteRepository(session).listar(menor_id=menor_id)
+
+
+def esta_archivado(session: Session, menor_id: uuid.UUID | None) -> bool:
+    """Corrección obligatoria (ADR-0010, sección 3.2): ningún rol puede crear documentos nuevos
+    para un menor cuyo expediente ya está archivado. Import diferido para evitar un ciclo entre
+    `documentos`/`archivo` (mismo patrón que el resto del módulo)."""
+    if menor_id is None:
+        return False
+    from app.modules.archivo.application import esta_archivado as _esta_archivado_archivo
+
+    return _esta_archivado_archivo(session, menor_id)
+
+
 def listar_para_auditor(session: Session, usuario) -> list[Documento]:
     """GET /documentos/auditor: metadatos de todos los documentos no sensibles, nunca contenido
     (ADR-0007 punto 3, ADR-0008 sección 6)."""
@@ -459,12 +540,19 @@ def listar_para_auditor(session: Session, usuario) -> list[Documento]:
 # Reportes
 # ---------------------------------------------------------------------------
 
-def crear_reporte(session: Session, usuario, datos: ReporteCreate) -> Reporte:
+def crear_reporte(
+    session: Session, usuario, datos: ReporteCreate, *, tareas_fondo: BackgroundTasks | None = None
+) -> Reporte:
     from app.modules.profesionales.application import esta_asignado_a_menor, profesional_de_usuario
 
     if usuario.rol not in (Rol.PROFESIONAL.value, Rol.DEFENSOR.value):
         registrar_acceso(session, accion="reporte_creacion_denegada", usuario_id=usuario.id, menor_id=datos.menor_id)
         raise prohibido()
+    if esta_archivado(session, datos.menor_id):
+        registrar_acceso(
+            session, accion="reporte_creacion_denegada_archivado", usuario_id=usuario.id, menor_id=datos.menor_id
+        )
+        raise prohibido("El expediente está archivado; no se pueden crear reportes nuevos")
     profesional = profesional_de_usuario(session, usuario.id)
     if profesional is None or not esta_asignado_a_menor(session, profesional.id, datos.menor_id):
         registrar_acceso(session, accion="reporte_creacion_denegada", usuario_id=usuario.id, menor_id=datos.menor_id)
@@ -481,6 +569,7 @@ def crear_reporte(session: Session, usuario, datos: ReporteCreate) -> Reporte:
     )
     reporte = ReporteRepository(session).crear(reporte)
     registrar_acceso(session, accion="reporte_creado", usuario_id=usuario.id, recurso=str(reporte.id), menor_id=reporte.menor_id)
+    _programar_indexacion_reporte(tareas_fondo, session, reporte.id)
     return reporte
 
 

@@ -100,6 +100,28 @@ def tiene_permiso_seccion(session: Session, usuario, menor_id: uuid.UUID, seccio
     return _tiene_permiso_seccion(session, usuario, menor, seccion)
 
 
+def menor_por_id_interno(session: Session, menor_id: uuid.UUID) -> Menor:
+    """Uso interno (sin control de autorización), para `archivo.application` (ADR-0010, sección
+    3.1/3.2): la condición de archivo se evalúa precisamente cuando ya no hay asignación vigente,
+    así que `puede_ver_menor` (que depende de esa asignación para coordinador/madre) no sirve aquí.
+    El llamador ya resuelve su propia autorización de zona antes de invocar esto. No exponer en
+    `api.py`; mismo patrón que `asignaciones.vigente_de_menor`."""
+    return _menor_o_404(session, menor_id)
+
+
+def historial_menor_interno(session: Session, menor_id: uuid.UUID) -> list[MenorHistory]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2). No exponer en `api.py`."""
+    return MenorHistoryRepository(session).listar_por_menor(menor_id)
+
+
+def permisos_interno(session: Session, menor_id: uuid.UUID) -> list[PermisoExpediente]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2): incluye permisos activos e inactivos (historial de ACL). No
+    exponer en `api.py`."""
+    return PermisoExpedienteRepository(session).listar_por_menor(menor_id)
+
+
 def puede_ver_menor(session: Session, usuario, menor_id: uuid.UUID) -> bool:
     """Wrapper público de `_puede_ver_menor` para otros módulos (p. ej. `asignaciones`) que necesitan
     aplicar la misma regla de visibilidad por fila sin acceder directamente al repositorio."""

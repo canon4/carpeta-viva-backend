@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, UuidPk
 
-TIPOS_ALERTA = ("evasion", "visita_vencida", "documento_faltante")
+TIPOS_ALERTA = ("evasion", "visita_vencida", "documento_faltante", "indexacion_pendiente")
 ORIGENES_ALERTA = ("manual", "automatica")
 ESTADOS_ALERTA = ("activa", "cerrada")
 

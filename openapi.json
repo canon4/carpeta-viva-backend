@@ -3740,7 +3740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CitaOut"
+                  "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                 }
               }
             }
@@ -3827,7 +3827,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/CitaOut"
+                    "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                   },
                   "title": "Response Listar Citas Endpoint Api V1 Citas Get"
                 }
@@ -3861,7 +3861,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/CitaOut"
+                    "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                   },
                   "type": "array",
                   "title": "Response Listar Proximas Endpoint Api V1 Citas Proximas Get"
@@ -3907,7 +3907,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CitaOut"
+                  "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                 }
               }
             }
@@ -3963,7 +3963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CitaOut"
+                  "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                 }
               }
             }
@@ -4021,7 +4021,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CitaOut"
+                  "$ref": "#/components/schemas/app__modules__citas__schemas__CitaOut"
                 }
               }
             }
@@ -4464,13 +4464,305 @@
         }
       }
     },
+    "/api/v1/reportes/general": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Reporte general",
+        "operationId": "general_endpoint_api_v1_reportes_general_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteAgregadoOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reportes/zona/{zona_id}": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Reporte por zona",
+        "operationId": "zona_endpoint_api_v1_reportes_zona__zona_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zona_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Zona Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteAgregadoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reportes/menor/{menor_id}": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Reporte por menor",
+        "operationId": "menor_endpoint_api_v1_reportes_menor__menor_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteMenorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reportes/madre/{madre_id}": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Reporte por madre",
+        "operationId": "madre_endpoint_api_v1_reportes_madre__madre_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "madre_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Madre Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteMadreOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reportes/exportar": {
+      "post": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Exportar reporte",
+        "operationId": "exportar_endpoint_api_v1_reportes_exportar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportarRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeGeneradoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reportes/exportados": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Listar informes exportados",
+        "operationId": "listar_exportados_endpoint_api_v1_reportes_exportados_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InformeGeneradoOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Exportados Endpoint Api V1 Reportes Exportados Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reportes/exportados/{informe_id}/contenido": {
+      "get": {
+        "tags": [
+          "Reportes"
+        ],
+        "summary": "Descargar un informe exportado",
+        "operationId": "contenido_exportado_endpoint_api_v1_reportes_exportados__informe_id__contenido_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "informe_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Informe Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ia/_estado": {
       "get": {
         "tags": [
           "Asistente de IA"
         ],
-        "summary": "Estado del módulo",
-        "operationId": "estado_api_v1_ia__estado_get",
+        "summary": "Estado del módulo (health check, no confundir con GET /ia/estado)",
+        "operationId": "modulo_estado_api_v1_ia__estado_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4481,12 +4773,395 @@
                     "type": "string"
                   },
                   "type": "object",
-                  "title": "Response Estado Api V1 Ia  Estado Get"
+                  "title": "Response Modulo Estado Api V1 Ia  Estado Get"
                 }
               }
             }
           }
         }
+      }
+    },
+    "/api/v1/ia/estado": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Configuración activa del asistente (admin)",
+        "operationId": "estado_endpoint_api_v1_ia_estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoIaOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ia/consultas": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Historial de consultas (propio, o todas para admin/auditor)",
+        "operationId": "listar_consultas_endpoint_api_v1_ia_consultas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/ConsultaOut"
+                      },
+                      "type": "array"
+                    },
+                    {
+                      "items": {
+                        "$ref": "#/components/schemas/ConsultaMetadatosOut"
+                      },
+                      "type": "array"
+                    }
+                  ],
+                  "title": "Response Listar Consultas Endpoint Api V1 Ia Consultas Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Pregunta en lenguaje natural (RAG con citas)",
+        "operationId": "crear_consulta_endpoint_api_v1_ia_consultas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultaCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ia/consultas/{consulta_id}": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Detalle de una consulta",
+        "operationId": "obtener_consulta_endpoint_api_v1_ia_consultas__consulta_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "consulta_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Consulta Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ConsultaOut"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ConsultaMetadatosOut"
+                    }
+                  ],
+                  "title": "Response Obtener Consulta Endpoint Api V1 Ia Consultas  Consulta Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ia/menores/{menor_id}/resumen": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Resumen de IA del expediente",
+        "operationId": "resumen_menor_endpoint_api_v1_ia_menores__menor_id__resumen_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenMenorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ia/documentos/{documento_id}/resumen": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Resumen de IA de un documento o reporte",
+        "operationId": "resumen_documento_endpoint_api_v1_ia_documentos__documento_id__resumen_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenDocumentoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ia/redaccion/apoyo": {
+      "post": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Borrador de informe con apoyo de IA",
+        "operationId": "apoyo_redaccion_endpoint_api_v1_ia_redaccion_apoyo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedaccionApoyoCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedaccionApoyoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ia/mantenimiento/reindexar-pendientes": {
+      "post": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Reintenta la indexación de documentos/reportes sin fragmentos (admin)",
+        "operationId": "reindexar_pendientes_endpoint_api_v1_ia_mantenimiento_reindexar_pendientes_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexarPendientesOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ia/documentos/clasificar": {
+      "post": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Sugerencia de categoría antes de crear el documento (no persiste nada)",
+        "description": "No está en la lista literal de endpoints de ADR-0010 sección 1.9 (que describe\n`clasificar_y_extraer` como un caso de uso interno llamado por `documentos.application`\ndespués de guardar); se agrega este endpoint propio, de solo sugerencia, para poder\nmostrar `categoria_sugerida`/`confianza` ANTES de guardar (sección 1.2, \"se devuelve\ncategoria_sugerida y confianza en la respuesta de carga\") sin modificar el contrato de\n`POST /documentos` de ADR-0008 sin coordinarlo primero con `backend`. Deviación documentada\nen el informe final de esta tarea.\n\nHueco de disponibilidad corregido en la revisión de cierre de seguridad: a diferencia de\n`POST /documentos`/`POST /documentos/{id}/version` (que validan tamaño con\n`documentos.application._validar_tamanio` antes de procesar), este endpoint no tenía límite\nde tamaño: cualquier usuario autenticado podía mandar repetidamente una imagen enorme (o una\n\"bomba de descompresión\" para Pillow/Tesseract) y agotar CPU/memoria del backend sin pasar\npor ningún límite, ya que no persiste nada y por eso no pasaba por esa validación. Se aplica\nel mismo límite de tamaño configurado (`ARCHIVOS_TAMANIO_MAXIMO_BYTES`).",
+        "operationId": "clasificar_documento_endpoint_api_v1_ia_documentos_clasificar_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_clasificar_documento_endpoint_api_v1_ia_documentos_clasificar_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Clasificar Documento Endpoint Api V1 Ia Documentos Clasificar Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/auditoria/_estado": {
@@ -4664,6 +5339,251 @@
                   },
                   "type": "object",
                   "title": "Response Estado Api V1 Archivo  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archivo": {
+      "get": {
+        "tags": [
+          "Archivo y Cierre"
+        ],
+        "summary": "Listar expedientes archivados",
+        "operationId": "listar_endpoint_api_v1_archivo_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "zona_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Zona Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExpedienteArchivoOut"
+                  },
+                  "title": "Response Listar Endpoint Api V1 Archivo Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archivo/menores/{menor_id}/cerrar": {
+      "post": {
+        "tags": [
+          "Archivo y Cierre"
+        ],
+        "summary": "Archivar y cerrar el expediente de un menor",
+        "operationId": "cerrar_endpoint_api_v1_archivo_menores__menor_id__cerrar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CerrarExpedienteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpedienteArchivoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archivo/menores/{menor_id}": {
+      "get": {
+        "tags": [
+          "Archivo y Cierre"
+        ],
+        "summary": "Estado de archivo de un menor",
+        "operationId": "estado_endpoint_api_v1_archivo_menores__menor_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExpedienteArchivoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/archivo/menores/{menor_id}/paquete": {
+      "get": {
+        "tags": [
+          "Archivo y Cierre"
+        ],
+        "summary": "Descargar el paquete cifrado del expediente archivado",
+        "operationId": "paquete_endpoint_api_v1_archivo_menores__menor_id__paquete_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -5375,6 +6295,20 @@
         ],
         "title": "AuditoriaAccesoOut"
       },
+      "Body_clasificar_documento_endpoint_api_v1_ia_documentos_clasificar_post": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo"
+        ],
+        "title": "Body_clasificar_documento_endpoint_api_v1_ia_documentos_clasificar_post"
+      },
       "Body_crear_documento_endpoint_api_v1_documentos_post": {
         "properties": {
           "archivo": {
@@ -5453,6 +6387,21 @@
         ],
         "title": "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
       },
+      "CerrarExpedienteRequest": {
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "title": "CerrarExpedienteRequest"
+      },
       "CitaCreate": {
         "properties": {
           "menor_id": {
@@ -5518,82 +6467,6 @@
         ],
         "title": "CitaEstadoUpdate"
       },
-      "CitaOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "menor_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Menor Id"
-          },
-          "tipo": {
-            "type": "string",
-            "title": "Tipo"
-          },
-          "fecha_hora": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Fecha Hora"
-          },
-          "lugar": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lugar"
-          },
-          "notas": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notas"
-          },
-          "estado": {
-            "type": "string",
-            "title": "Estado"
-          },
-          "registrado_por": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Registrado Por"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "menor_id",
-          "tipo",
-          "fecha_hora",
-          "estado",
-          "registrado_por",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "CitaOut"
-      },
       "CitaUpdate": {
         "properties": {
           "fecha_hora": {
@@ -5634,6 +6507,234 @@
         },
         "type": "object",
         "title": "CitaUpdate"
+      },
+      "ConsultaCreate": {
+        "properties": {
+          "pregunta": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Pregunta"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pregunta"
+        ],
+        "title": "ConsultaCreate"
+      },
+      "ConsultaMetadatosOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
+          },
+          "fragmentos_usados": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fragmentos Usados"
+          },
+          "modelo": {
+            "type": "string",
+            "title": "Modelo"
+          },
+          "proveedor": {
+            "type": "string",
+            "title": "Proveedor"
+          },
+          "anonimizado": {
+            "type": "boolean",
+            "title": "Anonimizado"
+          },
+          "sin_resultado": {
+            "type": "boolean",
+            "title": "Sin Resultado"
+          },
+          "duracion_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracion Ms"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "modelo",
+          "proveedor",
+          "anonimizado",
+          "sin_resultado",
+          "creado_en"
+        ],
+        "title": "ConsultaMetadatosOut",
+        "description": "Lo único que ve `auditor` (ADR-0010, sección 1.4/1.9): nunca `pregunta`/`respuesta`."
+      },
+      "ConsultaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "pregunta": {
+            "type": "string",
+            "title": "Pregunta"
+          },
+          "respuesta": {
+            "type": "string",
+            "title": "Respuesta"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
+          },
+          "fragmentos_usados": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fragmentos Usados"
+          },
+          "modelo": {
+            "type": "string",
+            "title": "Modelo"
+          },
+          "proveedor": {
+            "type": "string",
+            "title": "Proveedor"
+          },
+          "anonimizado": {
+            "type": "boolean",
+            "title": "Anonimizado"
+          },
+          "sin_resultado": {
+            "type": "boolean",
+            "title": "Sin Resultado"
+          },
+          "duracion_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duracion Ms"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "pregunta",
+          "respuesta",
+          "modelo",
+          "proveedor",
+          "anonimizado",
+          "sin_resultado",
+          "creado_en"
+        ],
+        "title": "ConsultaOut"
       },
       "ContactoEmergencia": {
         "properties": {
@@ -6042,6 +7143,35 @@
         ],
         "title": "DocumentoOut"
       },
+      "DocumentoResumen": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "estado_flujo": {
+            "type": "string",
+            "title": "Estado Flujo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "categoria",
+          "titulo",
+          "estado_flujo"
+        ],
+        "title": "DocumentoResumen"
+      },
       "DocumentoVersionOut": {
         "properties": {
           "id": {
@@ -6176,6 +7306,44 @@
         ],
         "title": "EstadoHogar"
       },
+      "EstadoIaOut": {
+        "properties": {
+          "proveedor_llm": {
+            "type": "string",
+            "title": "Proveedor Llm"
+          },
+          "modelo_llm": {
+            "type": "string",
+            "title": "Modelo Llm"
+          },
+          "embeddings_modelo": {
+            "type": "string",
+            "title": "Embeddings Modelo"
+          },
+          "anonimizado_por_defecto": {
+            "type": "boolean",
+            "title": "Anonimizado Por Defecto"
+          },
+          "seudonimizacion_cobertura": {
+            "type": "string",
+            "title": "Seudonimizacion Cobertura"
+          },
+          "indexar_automaticamente": {
+            "type": "boolean",
+            "title": "Indexar Automaticamente"
+          }
+        },
+        "type": "object",
+        "required": [
+          "proveedor_llm",
+          "modelo_llm",
+          "embeddings_modelo",
+          "anonimizado_por_defecto",
+          "seudonimizacion_cobertura",
+          "indexar_automaticamente"
+        ],
+        "title": "EstadoIaOut"
+      },
       "EstadoMenor": {
         "type": "string",
         "enum": [
@@ -6231,6 +7399,166 @@
           "contactos_emergencia"
         ],
         "title": "EvasionReportadaOut"
+      },
+      "ExpedienteArchivoOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "archivado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archivado En"
+          },
+          "archivado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archivado Por"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "zona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zona Id"
+          },
+          "paquete_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paquete Hash"
+          },
+          "destino": {
+            "type": "string",
+            "title": "Destino"
+          },
+          "enviado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enviado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "estado",
+          "destino"
+        ],
+        "title": "ExpedienteArchivoOut"
+      },
+      "ExportarRequest": {
+        "properties": {
+          "nivel": {
+            "type": "string",
+            "title": "Nivel"
+          },
+          "zona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zona Id"
+          },
+          "menor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menor Id"
+          },
+          "madre_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Madre Id"
+          },
+          "formato": {
+            "type": "string",
+            "title": "Formato",
+            "default": "json"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nivel"
+        ],
+        "title": "ExportarRequest"
       },
       "FamiliarCreate": {
         "properties": {
@@ -6569,6 +7897,59 @@
         },
         "type": "object",
         "title": "HogarUpdate"
+      },
+      "InformeGeneradoOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "nivel": {
+            "type": "string",
+            "title": "Nivel"
+          },
+          "filtros": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filtros"
+          },
+          "formato": {
+            "type": "string",
+            "title": "Formato"
+          },
+          "referencia_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referencia Archivo"
+          },
+          "generado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "nivel",
+          "filtros",
+          "formato",
+          "generado_en"
+        ],
+        "title": "InformeGeneradoOut"
       },
       "InventarioItemCreate": {
         "properties": {
@@ -7771,6 +9152,163 @@
         "type": "object",
         "title": "RedApoyoUpdate"
       },
+      "RedaccionApoyoCreate": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "tipo_informe": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Tipo Informe"
+          },
+          "notas_profesional": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Notas Profesional"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "tipo_informe",
+          "notas_profesional"
+        ],
+        "title": "RedaccionApoyoCreate"
+      },
+      "RedaccionApoyoOut": {
+        "properties": {
+          "borrador": {
+            "type": "string",
+            "title": "Borrador"
+          },
+          "citas": {
+            "items": {
+              "$ref": "#/components/schemas/app__modules__ia__schemas__CitaOut"
+            },
+            "type": "array",
+            "title": "Citas"
+          },
+          "sin_resultado": {
+            "type": "boolean",
+            "title": "Sin Resultado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "borrador",
+          "citas",
+          "sin_resultado"
+        ],
+        "title": "RedaccionApoyoOut"
+      },
+      "ReindexarPendientesOut": {
+        "properties": {
+          "documentos_reindexados": {
+            "type": "integer",
+            "title": "Documentos Reindexados"
+          },
+          "reportes_reindexados": {
+            "type": "integer",
+            "title": "Reportes Reindexados"
+          },
+          "documentos_con_error": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Documentos Con Error"
+          },
+          "reportes_con_error": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reportes Con Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "documentos_reindexados",
+          "reportes_reindexados",
+          "documentos_con_error",
+          "reportes_con_error"
+        ],
+        "title": "ReindexarPendientesOut"
+      },
+      "ReporteAgregadoOut": {
+        "properties": {
+          "zona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zona Id"
+          },
+          "menores_por_estado": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Menores Por Estado"
+          },
+          "hogares_total": {
+            "type": "integer",
+            "title": "Hogares Total"
+          },
+          "hogares_capacidad_total": {
+            "type": "integer",
+            "title": "Hogares Capacidad Total"
+          },
+          "hogares_con_ocupacion_vigente": {
+            "type": "integer",
+            "title": "Hogares Con Ocupacion Vigente"
+          },
+          "documentos_pendientes_revision": {
+            "type": "integer",
+            "title": "Documentos Pendientes Revision"
+          },
+          "alertas_activas_por_tipo": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Alertas Activas Por Tipo"
+          },
+          "citas_vencidas": {
+            "type": "integer",
+            "title": "Citas Vencidas"
+          },
+          "alimentos_vencidos": {
+            "type": "integer",
+            "title": "Alimentos Vencidos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menores_por_estado",
+          "hogares_total",
+          "hogares_capacidad_total",
+          "hogares_con_ocupacion_vigente",
+          "documentos_pendientes_revision",
+          "alertas_activas_por_tipo",
+          "citas_vencidas",
+          "alimentos_vencidos"
+        ],
+        "title": "ReporteAgregadoOut",
+        "description": "`GET /reportes/general` y `GET /reportes/zona/{zona_id}`: mismos campos, `zona_id` es\n`None` solo cuando `general` lo ve `admin`/`auditor` sin acotar (todas las zonas)."
+      },
       "ReporteCreate": {
         "properties": {
           "menor_id": {
@@ -7808,6 +9346,138 @@
           "tipo_reporte"
         ],
         "title": "ReporteCreate"
+      },
+      "ReporteMadreOut": {
+        "properties": {
+          "madre_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Madre Id"
+          },
+          "hogares": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Hogares"
+          },
+          "menores_asignados": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Menores Asignados"
+          },
+          "documentos_creados_por_ella_por_estado": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Documentos Creados Por Ella Por Estado"
+          },
+          "alertas_activas": {
+            "type": "integer",
+            "title": "Alertas Activas"
+          },
+          "inventario_items": {
+            "type": "integer",
+            "title": "Inventario Items"
+          },
+          "alimentos_vencidos": {
+            "type": "integer",
+            "title": "Alimentos Vencidos"
+          },
+          "solo_agregado": {
+            "type": "boolean",
+            "title": "Solo Agregado",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "madre_id",
+          "hogares",
+          "menores_asignados",
+          "documentos_creados_por_ella_por_estado",
+          "alertas_activas",
+          "inventario_items",
+          "alimentos_vencidos"
+        ],
+        "title": "ReporteMadreOut"
+      },
+      "ReporteMenorOut": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "estado_actual": {
+            "type": "string",
+            "title": "Estado Actual"
+          },
+          "asignacion_vigente_hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asignacion Vigente Hogar Id"
+          },
+          "documentos_por_categoria": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Documentos Por Categoria"
+          },
+          "documentos_visibles": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentoResumen"
+            },
+            "type": "array",
+            "title": "Documentos Visibles"
+          },
+          "reportes_por_tipo": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Reportes Por Tipo"
+          },
+          "alertas_activas": {
+            "type": "integer",
+            "title": "Alertas Activas"
+          },
+          "citas_proximas": {
+            "type": "integer",
+            "title": "Citas Proximas"
+          },
+          "secciones_sin_acceso": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Secciones Sin Acceso"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "estado_actual",
+          "documentos_por_categoria",
+          "documentos_visibles",
+          "reportes_por_tipo",
+          "alertas_activas",
+          "citas_proximas"
+        ],
+        "title": "ReporteMenorOut"
       },
       "ReporteOut": {
         "properties": {
@@ -7872,6 +9542,70 @@
           "created_at"
         ],
         "title": "ReporteOut"
+      },
+      "ResumenDocumentoOut": {
+        "properties": {
+          "documento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Documento Id"
+          },
+          "resumen": {
+            "type": "string",
+            "title": "Resumen"
+          },
+          "citas": {
+            "items": {
+              "$ref": "#/components/schemas/app__modules__ia__schemas__CitaOut"
+            },
+            "type": "array",
+            "title": "Citas"
+          },
+          "sin_resultado": {
+            "type": "boolean",
+            "title": "Sin Resultado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "documento_id",
+          "resumen",
+          "citas",
+          "sin_resultado"
+        ],
+        "title": "ResumenDocumentoOut"
+      },
+      "ResumenMenorOut": {
+        "properties": {
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "resumen": {
+            "type": "string",
+            "title": "Resumen"
+          },
+          "citas": {
+            "items": {
+              "$ref": "#/components/schemas/app__modules__ia__schemas__CitaOut"
+            },
+            "type": "array",
+            "title": "Citas"
+          },
+          "sin_resultado": {
+            "type": "boolean",
+            "title": "Sin Resultado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menor_id",
+          "resumen",
+          "citas",
+          "sin_resultado"
+        ],
+        "title": "ResumenMenorOut"
       },
       "SeccionExpedienteOut": {
         "properties": {
@@ -8141,6 +9875,135 @@
         },
         "type": "object",
         "title": "ZonaUpdate"
+      },
+      "app__modules__citas__schemas__CitaOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "menor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Menor Id"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "fecha_hora": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Hora"
+          },
+          "lugar": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lugar"
+          },
+          "notas": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notas"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "registrado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Registrado Por"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "menor_id",
+          "tipo",
+          "fecha_hora",
+          "estado",
+          "registrado_por",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CitaOut"
+      },
+      "app__modules__ia__schemas__CitaOut": {
+        "properties": {
+          "documento_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documento Id"
+          },
+          "reporte_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporte Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "categoria": {
+            "type": "string",
+            "title": "Categoria"
+          },
+          "fecha": {
+            "type": "string",
+            "title": "Fecha"
+          },
+          "texto": {
+            "type": "string",
+            "title": "Texto",
+            "description": "Formato de cita ya armado, sin nombres reales (sección 1.5 paso 6)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "categoria",
+          "fecha",
+          "texto"
+        ],
+        "title": "CitaOut"
       }
     },
     "securitySchemes": {

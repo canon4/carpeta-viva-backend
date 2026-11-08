@@ -214,12 +214,15 @@ def test_generacion_automatica_visita_vencida_sin_duplicados(client, session_fac
 
     r1 = client.post("/api/v1/alertas/generar-automaticas", headers=h_admin)
     assert r1.status_code == 200
-    assert len(r1.json()) == 1
-    assert r1.json()[0]["tipo"] == "visita_vencida"
+    # Desde ADR-0010 (sección 1.7), `generar-automaticas` también evalúa "sin informe
+    # psicosocial en 60 días": un menor recién ingresado sin reportes también dispara
+    # `documento_faltante` en la misma pasada, además de `visita_vencida`.
+    visitas_r1 = [a for a in r1.json() if a["tipo"] == "visita_vencida"]
+    assert len(visitas_r1) == 1
 
     r2 = client.post("/api/v1/alertas/generar-automaticas", headers=h_admin)
     assert r2.status_code == 200
-    assert len(r2.json()) == 0
+    assert len(r2.json()) == 0  # idempotente: nada nuevo que generar en la segunda pasada
 
     r3 = client.get("/api/v1/alertas", params={"menor_id": menor_id, "tipo": "visita_vencida"}, headers=h_admin)
     assert len(r3.json()) == 1

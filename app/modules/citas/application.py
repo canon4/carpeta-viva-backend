@@ -59,11 +59,18 @@ def puede_ver_notas(session: Session, usuario, cita: Cita) -> bool:
 
 
 def crear_cita(session: Session, usuario, datos: CitaCreate) -> Cita:
+    from app.modules.archivo.application import esta_archivado
+
     if not _puede_escribir(session, usuario, datos.menor_id):
         registrar_acceso(
             session, accion="cita_creacion_denegada", usuario_id=usuario.id, menor_id=datos.menor_id
         )
         raise prohibido()
+    if esta_archivado(session, datos.menor_id):
+        registrar_acceso(
+            session, accion="cita_creacion_denegada_archivado", usuario_id=usuario.id, menor_id=datos.menor_id
+        )
+        raise prohibido("El expediente está archivado; no se pueden crear citas nuevas")
     cita = Cita(
         menor_id=datos.menor_id,
         tipo=datos.tipo,
@@ -151,6 +158,12 @@ def cambiar_estado_cita(session: Session, usuario, cita_id: uuid.UUID, estado: s
         session, accion="cita_estado_actualizado", usuario_id=usuario.id, recurso=str(cita.id), menor_id=cita.menor_id
     )
     return cita
+
+
+def listar_citas_interno(session: Session, menor_id: uuid.UUID) -> list[Cita]:
+    """Uso interno (sin control de autorización) para el manifiesto del paquete de archivo
+    (ADR-0010, sección 3.2). No exponer en `api.py`."""
+    return CitaRepository(session).listar(menor_id=menor_id)
 
 
 def citas_vencidas_pendientes(session: Session) -> list[Cita]:

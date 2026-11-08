@@ -2,3 +2,103 @@
 
 Busca, resume y clasifica con citas; consulta solo por la capa de aplicación.
 """
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+MENSAJE_ACCESO_REVOCADO = "[contenido ya no accesible: el permiso sobre este expediente fue revocado]"
+MENSAJE_SIN_RESULTADO = "No encontré información en los documentos/reportes a los que tiene acceso."
+
+
+class CitaOut(BaseModel):
+    documento_id: uuid.UUID | None = None
+    reporte_id: uuid.UUID | None = None
+    version: int
+    categoria: str
+    fecha: str
+    texto: str = Field(description="Formato de cita ya armado, sin nombres reales (sección 1.5 paso 6)")
+
+
+class ConsultaCreate(BaseModel):
+    pregunta: str = Field(min_length=1, max_length=2000)
+    menor_id: uuid.UUID | None = None
+    hogar_id: uuid.UUID | None = None
+
+
+class ConsultaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    usuario_id: uuid.UUID
+    pregunta: str
+    respuesta: str
+    menor_id: uuid.UUID | None = None
+    hogar_id: uuid.UUID | None = None
+    fragmentos_usados: list[dict] = Field(default_factory=list)
+    modelo: str
+    proveedor: str
+    anonimizado: bool
+    sin_resultado: bool
+    duracion_ms: int | None = None
+    creado_en: datetime
+
+
+class ConsultaMetadatosOut(BaseModel):
+    """Lo único que ve `auditor` (ADR-0010, sección 1.4/1.9): nunca `pregunta`/`respuesta`."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    usuario_id: uuid.UUID
+    menor_id: uuid.UUID | None = None
+    hogar_id: uuid.UUID | None = None
+    fragmentos_usados: list[dict] = Field(default_factory=list)
+    modelo: str
+    proveedor: str
+    anonimizado: bool
+    sin_resultado: bool
+    duracion_ms: int | None = None
+    creado_en: datetime
+
+
+class ResumenMenorOut(BaseModel):
+    menor_id: uuid.UUID
+    resumen: str
+    citas: list[CitaOut]
+    sin_resultado: bool
+
+
+class ResumenDocumentoOut(BaseModel):
+    documento_id: uuid.UUID
+    resumen: str
+    citas: list[CitaOut]
+    sin_resultado: bool
+
+
+class RedaccionApoyoCreate(BaseModel):
+    menor_id: uuid.UUID
+    tipo_informe: str = Field(min_length=1, max_length=60)
+    notas_profesional: str = Field(min_length=1, max_length=4000)
+
+
+class RedaccionApoyoOut(BaseModel):
+    borrador: str
+    citas: list[CitaOut]
+    sin_resultado: bool
+
+
+class EstadoIaOut(BaseModel):
+    proveedor_llm: str
+    modelo_llm: str
+    embeddings_modelo: str
+    anonimizado_por_defecto: bool
+    seudonimizacion_cobertura: str
+    indexar_automaticamente: bool
+
+
+class ReindexarPendientesOut(BaseModel):
+    documentos_reindexados: int
+    reportes_reindexados: int
+    documentos_con_error: list[uuid.UUID]
+    reportes_con_error: list[uuid.UUID]
