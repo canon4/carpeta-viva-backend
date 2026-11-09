@@ -36,6 +36,7 @@ class MadreOut(BaseModel):
     telefono: str | None = None
     estado_certificacion: str
     firma_ref: str | None = None
+    hogar_id: uuid.UUID | None = None
 
 
 class FirmaUpdate(BaseModel):

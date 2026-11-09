@@ -78,10 +78,41 @@ def test_madre_ve_su_propio_perfil_y_carga_firma(client, session_factory):
     r = client.get("/api/v1/madres/yo", headers=h_madre)
     assert r.status_code == 200
     assert r.json()["numero_identificacion"] == "103"
+    assert r.json()["hogar_id"] is None  # sin hogar asignado todavía
 
     r = client.put("/api/v1/madres/yo/firma", json={"firma_ref": "firma-demo-123"}, headers=h_madre)
     assert r.status_code == 200
     assert r.json()["firma_ref"] == "firma-demo-123"
+
+
+def test_madre_yo_incluye_su_hogar_sin_pasar_por_zonas_hogares(client, session_factory):
+    """La madre no tiene acceso a Zonas y Hogares (roles coordinador/admin); /madres/yo le dice
+    el id de su propio hogar para que pueda usar Inventario, Alimentos y el Asistente de IA."""
+    with session_factory() as s:
+        usuario = Usuario(email="madre3@prueba.local", password_hash=hash_password(CLAVE_SINTETICA), rol="madre")
+        s.add(usuario)
+        s.commit()
+        usuario_id = str(usuario.id)
+
+    h_coord = auth_header(client, session_factory, "coord3@prueba.local", "coordinador")
+    r = crear_madre(client, h_coord, "104", usuario_id=usuario_id)
+    madre_id = r.json()["id"]
+
+    r = client.post("/api/v1/zonas-hogares/zonas", json={"nombre": "Zona Prueba"}, headers=h_coord)
+    zona_id = r.json()["id"]
+    r = client.post("/api/v1/zonas-hogares/hogares", json={"zona_id": zona_id}, headers=h_coord)
+    hogar_id = r.json()["id"]
+    r = client.put(f"/api/v1/zonas-hogares/hogares/{hogar_id}", json={"madre_id": madre_id}, headers=h_coord)
+    assert r.status_code == 200
+
+    token = login(client, "madre3@prueba.local")
+    h_madre = {"Authorization": f"Bearer {token}"}
+    r = client.get("/api/v1/madres/yo", headers=h_madre)
+    assert r.status_code == 200
+    assert r.json()["hogar_id"] == hogar_id
+
+    # La madre sigue sin poder listar Zonas y Hogares directamente.
+    assert client.get("/api/v1/zonas-hogares/hogares", headers=h_madre).status_code == 403
 
 
 def test_madre_sin_perfil_asociado_es_404(client, session_factory):

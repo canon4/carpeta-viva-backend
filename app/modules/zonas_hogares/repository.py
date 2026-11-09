@@ -42,6 +42,9 @@ class HogarRepository:
     def por_id(self, hogar_id: uuid.UUID) -> HogarSustituto | None:
         return self.session.get(HogarSustituto, hogar_id)
 
+    def por_madre_id(self, madre_id: uuid.UUID) -> HogarSustituto | None:
+        return self.session.scalar(select(HogarSustituto).where(HogarSustituto.madre_id == madre_id))
+
     def listar(self, zona_id: uuid.UUID | None = None) -> list[HogarSustituto]:
         consulta = select(HogarSustituto)
         if zona_id is not None:

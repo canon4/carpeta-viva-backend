@@ -65,6 +65,13 @@ def listar_hogares(session: Session, zona_id: uuid.UUID | None = None) -> list[H
     return HogarRepository(session).listar(zona_id)
 
 
+def hogar_de_madre(session: Session, madre_id: uuid.UUID) -> HogarSustituto | None:
+    """El hogar de una madre (si tiene uno asignado). Lo usa el módulo `madres` para que la madre
+    conozca el id de su propio hogar sin necesitar acceso a Zonas y Hogares (roles coordinador/
+    admin, ver `_coordinador_o_admin` en `api.py`)."""
+    return HogarRepository(session).por_madre_id(madre_id)
+
+
 def obtener_hogar(session: Session, hogar_id: uuid.UUID) -> HogarSustituto:
     hogar = HogarRepository(session).por_id(hogar_id)
     if hogar is None:

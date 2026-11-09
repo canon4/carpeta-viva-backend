@@ -8245,6 +8245,18 @@
               }
             ],
             "title": "Firma Ref"
+          },
+          "hogar_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hogar Id"
           }
         },
         "type": "object",

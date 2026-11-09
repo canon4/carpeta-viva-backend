@@ -11,7 +11,7 @@ from app.core.errors import no_encontrado
 
 from .models import MadreSustituta
 from .repository import MadreRepository
-from .schemas import MadreCreate, MadreUpdate
+from .schemas import MadreCreate, MadreOut, MadreUpdate
 
 
 def crear_madre(session: Session, datos: MadreCreate, usuario_id: uuid.UUID) -> MadreSustituta:
@@ -57,6 +57,19 @@ def obtener_mi_perfil(session: Session, usuario_id: uuid.UUID) -> MadreSustituta
     if madre is None:
         raise no_encontrado("No hay perfil de madre sustituta asociado a este usuario")
     return madre
+
+
+def obtener_mi_perfil_con_hogar(session: Session, usuario_id: uuid.UUID) -> MadreOut:
+    """Perfil de la madre autenticada con el id de su propio hogar (si tiene uno asignado), para
+    que pueda usar Inventario, Alimentos y el Asistente de IA sin conocer el id de memoria: la
+    madre no tiene acceso a Zonas y Hogares (roles coordinador/admin)."""
+    from app.modules.zonas_hogares.application import hogar_de_madre  # evita import circular
+
+    madre = obtener_mi_perfil(session, usuario_id)
+    hogar = hogar_de_madre(session, madre.id)
+    salida = MadreOut.model_validate(madre)
+    salida.hogar_id = hogar.id if hogar else None
+    return salida
 
 
 def madre_de_usuario(session: Session, usuario_id: uuid.UUID) -> MadreSustituta | None:

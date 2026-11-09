@@ -14,7 +14,7 @@ from .application import (
     crear_madre,
     listar_madres,
     obtener_madre,
-    obtener_mi_perfil,
+    obtener_mi_perfil_con_hogar,
 )
 from .schemas import FirmaUpdate, MadreCreate, MadreOut, MadreUpdate
 
@@ -31,7 +31,7 @@ def estado() -> dict[str, str]:
 
 @router.get("/yo", response_model=MadreOut, summary="Perfil de la madre autenticada")
 def mi_perfil(session: Session = Depends(get_session), usuario: Usuario = Depends(_madre)) -> MadreOut:
-    return obtener_mi_perfil(session, usuario.id)
+    return obtener_mi_perfil_con_hogar(session, usuario.id)
 
 
 @router.put("/yo/firma", response_model=MadreOut, summary="Cargar la firma de la madre autenticada")
