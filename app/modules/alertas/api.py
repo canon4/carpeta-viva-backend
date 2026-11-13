@@ -9,17 +9,26 @@ from app.modules.auth.domain import Rol
 from app.modules.auth.models import Usuario
 
 from .application import (
+    actualizar_telefono_policia_infancia,
     cerrar_alerta,
     generar_automaticas,
     listar_alertas,
     marcar_visto,
     mis_pendientes,
     obtener_alerta,
+    obtener_telefono_policia_infancia,
     panel,
     reportar_evasion,
 )
 from .models import Alerta
-from .schemas import AlertaOut, ContactosEmergenciaOut, EvasionCreate, EvasionReportadaOut
+from .schemas import (
+    AlertaOut,
+    ContactosEmergenciaOut,
+    EvasionCreate,
+    EvasionReportadaOut,
+    TelefonoPoliciaInfanciaOut,
+    TelefonoPoliciaInfanciaUpdate,
+)
 
 router = APIRouter(prefix="/alertas", tags=["Alertas y Evasiones"])
 
@@ -67,6 +76,30 @@ def generar_automaticas_endpoint(
     session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
 ) -> list[AlertaOut]:
     return generar_automaticas(session, usuario)
+
+
+@router.get(
+    "/configuracion/telefono-policia-infancia",
+    response_model=TelefonoPoliciaInfanciaOut,
+    summary="Consultar teléfono de la Policía de Infancia y Adolescencia (admin)",
+)
+def obtener_telefono_policia_infancia_endpoint(
+    session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> TelefonoPoliciaInfanciaOut:
+    return obtener_telefono_policia_infancia(session, usuario)
+
+
+@router.put(
+    "/configuracion/telefono-policia-infancia",
+    response_model=TelefonoPoliciaInfanciaOut,
+    summary="Cambiar el teléfono de la Policía de Infancia y Adolescencia (admin)",
+)
+def actualizar_telefono_policia_infancia_endpoint(
+    datos: TelefonoPoliciaInfanciaUpdate,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> TelefonoPoliciaInfanciaOut:
+    return actualizar_telefono_policia_infancia(session, usuario, datos.telefono)
 
 
 @router.get("", response_model=list[AlertaOut], summary="Listar alertas")

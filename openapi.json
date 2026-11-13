@@ -4246,6 +4246,76 @@
         ]
       }
     },
+    "/api/v1/alertas/configuracion/telefono-policia-infancia": {
+      "get": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Consultar teléfono de la Policía de Infancia y Adolescencia (admin)",
+        "operationId": "obtener_telefono_policia_infancia_endpoint_api_v1_alertas_configuracion_telefono_policia_infancia_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelefonoPoliciaInfanciaOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Alertas y Evasiones"
+        ],
+        "summary": "Cambiar el teléfono de la Policía de Infancia y Adolescencia (admin)",
+        "operationId": "actualizar_telefono_policia_infancia_endpoint_api_v1_alertas_configuracion_telefono_policia_infancia_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelefonoPoliciaInfanciaUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelefonoPoliciaInfanciaOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/alertas": {
       "get": {
         "tags": [
@@ -9714,6 +9784,39 @@
           "psicosocial"
         ],
         "title": "SeccionSensible"
+      },
+      "TelefonoPoliciaInfanciaOut": {
+        "properties": {
+          "telefono": {
+            "type": "string",
+            "title": "Telefono"
+          },
+          "editado_por_admin": {
+            "type": "boolean",
+            "title": "Editado Por Admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "telefono",
+          "editado_por_admin"
+        ],
+        "title": "TelefonoPoliciaInfanciaOut"
+      },
+      "TelefonoPoliciaInfanciaUpdate": {
+        "properties": {
+          "telefono": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Telefono"
+          }
+        },
+        "type": "object",
+        "required": [
+          "telefono"
+        ],
+        "title": "TelefonoPoliciaInfanciaUpdate"
       },
       "TipoDocumento": {
         "type": "string",

@@ -35,6 +35,20 @@ class Alerta(UuidPk, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ConfiguracionAlertas(Base):
+    """Fila única (id=1) con valores editables por `admin` en tiempo de ejecución, migración
+    0008. Si `telefono_policia_infancia` es NULL, se usa `POLICIA_INFANCIA_TELEFONO` del
+    entorno como respaldo (ver `application._telefono_policia_infancia`)."""
+
+    __tablename__ = "configuracion_alertas"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_configuracion_alertas_fila_unica"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, default=1)
+    telefono_policia_infancia: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    actualizado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    actualizado_por: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+
+
 class AlertaDestinatario(UuidPk, Base):
     __tablename__ = "alertas_destinatarios"
     __table_args__ = (UniqueConstraint("alerta_id", "usuario_id", name="uq_alertas_destinatarios_alerta_usuario"),)

@@ -54,3 +54,14 @@ class ContactosEmergenciaOut(BaseModel):
 class EvasionReportadaOut(BaseModel):
     alerta: AlertaOut
     contactos_emergencia: ContactosEmergenciaOut
+
+
+class TelefonoPoliciaInfanciaOut(BaseModel):
+    telefono: str
+    # True si viene de configuracion_alertas (editado por admin); False si todavía es el
+    # respaldo de la variable de entorno POLICIA_INFANCIA_TELEFONO.
+    editado_por_admin: bool
+
+
+class TelefonoPoliciaInfanciaUpdate(BaseModel):
+    telefono: str = Field(min_length=1, max_length=60)
