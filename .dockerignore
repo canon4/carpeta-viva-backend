@@ -1,0 +1,11 @@
+__pycache__
+**/__pycache__
+.pytest_cache
+.venv
+*.db
+data/
+.git
+# Nunca empaquetar secretos locales en la imagen: pydantic-settings lee .env directo del
+# disco si existe, y pisaría las variables que docker-compose.yml pasa por `environment:`.
+.env
+.env.*

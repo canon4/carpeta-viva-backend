@@ -8,9 +8,11 @@ alembic upgrade head
 uvicorn app.main:app --reload
 pytest
 ```
+
 Documentación interactiva: `/docs`. Salud: `/api/v1/health`.
 
 Datos sintéticos de demo (usuarios, zona, hogar, madre y profesional de ejemplo; contraseña `demo12345`):
+
 ```
 python scripts/seed_sintetico.py
 ```
