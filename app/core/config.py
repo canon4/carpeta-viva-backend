@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # si Anthropic publica una familia más nueva/barata antes de producción.
     ia_llm_modelo: str = "claude-haiku-5-5"
     anthropic_api_key: str | None = None
+    # Clave del adaptador Groq (ia_llm.py), alternativa a Anthropic. Solo se usa si
+    # ia_llm_proveedor="groq"; nunca tiene valor real por defecto, igual que la de Anthropic.
+    groq_api_key: str | None = None
     # Modelo de embeddings local (ADR-0010, sección 1.3): multilingüe, 384 dimensiones, sin
     # llamada externa. Versionado en `modelo_embedding` de `fragmentos_documento` como
     # "<nombre>@<version>" para poder reindexar todo si cambia.

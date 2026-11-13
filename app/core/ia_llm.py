@@ -72,11 +72,50 @@ class AnthropicProveedorLLM(ProveedorLLM):
         return RespuestaLLM(texto=texto, modelo=self.modelo, proveedor=self.nombre)
 
 
+class GroqProveedorLLM(ProveedorLLM):
+    """Adaptador concreto sobre la API SaaS de Groq, vía su SDK oficial `groq` (interfaz de
+    chat compatible con el formato de OpenAI: lista de mensajes con roles)."""
+
+    nombre = "groq"
+
+    def __init__(self, modelo: str, api_key: str | None):
+        self.modelo = modelo
+        self._api_key = api_key
+
+    def generar(self, prompt: str, *, contexto: str, instrucciones_sistema: str) -> RespuestaLLM:
+        if not self._api_key:
+            raise ProveedorLLMNoDisponible(
+                "GROQ_API_KEY no está configurada; defínala en el entorno (nunca en el repositorio)."
+            )
+        try:
+            import groq
+        except ImportError as exc:  # pragma: no cover
+            raise ProveedorLLMNoDisponible("El paquete 'groq' no está instalado") from exc
+
+        cliente = groq.Groq(api_key=self._api_key)
+        try:
+            respuesta = cliente.chat.completions.create(
+                model=self.modelo,
+                max_tokens=1024,
+                messages=[
+                    {"role": "system", "content": instrucciones_sistema},
+                    {"role": "user", "content": f"{contexto}\n\n---\n\n{prompt}"},
+                ],
+            )
+        except Exception as exc:  # noqa: BLE001 - cualquier error de red/API se trata igual: no disponible
+            raise ProveedorLLMNoDisponible(f"Error llamando a la API de Groq: {exc}") from exc
+
+        texto = respuesta.choices[0].message.content or ""
+        return RespuestaLLM(texto=texto, modelo=self.modelo, proveedor=self.nombre)
+
+
 def construir_proveedor_llm(proveedor: str, modelo: str) -> ProveedorLLM:
     """Fábrica por nombre de proveedor (configuración). Agregar un proveedor nuevo es agregar
     una rama aquí y una clase nueva, sin tocar `ia.application`."""
     if proveedor == "anthropic":
         return AnthropicProveedorLLM(modelo=modelo, api_key=get_settings().anthropic_api_key)
+    if proveedor == "groq":
+        return GroqProveedorLLM(modelo=modelo, api_key=get_settings().groq_api_key)
     raise ValueError(f"Proveedor de LLM no soportado: {proveedor!r}")
 
 
