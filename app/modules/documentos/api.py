@@ -25,6 +25,7 @@ from .application import (
     obtener_documento,
     obtener_reporte,
     seccion_expediente,
+    visualizar_documento,
 )
 from .schemas import (
     DocumentoDevolver,
@@ -50,6 +51,17 @@ def _cabeceras_descarga(nombre_original: str | None) -> dict[str, str]:
     nombre = _CONTROL_O_COMILLAS.sub("", nombre_original or "").strip() or "documento"
     return {
         "Content-Disposition": f'attachment; filename="{nombre}"',
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+    }
+
+
+def _cabeceras_vista(nombre_original: str | None) -> dict[str, str]:
+    """Igual que `_cabeceras_descarga`, pero `inline`: el navegador lo muestra en vez de
+    descargarlo (visor, ADR-0011). Mismas protecciones (`nosniff`, `no-store`)."""
+    nombre = _CONTROL_O_COMILLAS.sub("", nombre_original or "").strip() or "documento"
+    return {
+        "Content-Disposition": f'inline; filename="{nombre}"',
         "X-Content-Type-Options": "nosniff",
         "Cache-Control": "no-store",
     }
@@ -171,6 +183,21 @@ def descargar_documento_endpoint(
         content=contenido,
         media_type=documento.mime_type or "application/octet-stream",
         headers=_cabeceras_descarga(documento.nombre_original),
+    )
+
+
+@router.get("/{documento_id}/vista", summary="Ver en pantalla (solo PDF e imágenes)")
+def visualizar_documento_endpoint(
+    documento_id: uuid.UUID, session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> Response:
+    try:
+        documento, contenido = visualizar_documento(session, usuario, documento_id)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+    return Response(
+        content=contenido,
+        media_type=documento.mime_type or "application/octet-stream",
+        headers=_cabeceras_vista(documento.nombre_original),
     )
 
 

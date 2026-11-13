@@ -15,11 +15,12 @@ from sqlalchemy.orm import Session
 
 from app.core import almacenamiento
 from app.core.audit import registrar_acceso
+from app.core.compresion import comprimir_si_es_imagen
 from app.core.config import get_settings
 from app.core.errors import no_encontrado, prohibido
 from app.modules.auth.domain import Rol
 
-from .domain import CATEGORIAS_HOGAR, seccion_de_categoria, seccion_de_tipo_reporte
+from .domain import CATEGORIAS_HOGAR, es_visualizable, seccion_de_categoria, seccion_de_tipo_reporte
 from .models import Documento, DocumentoVersion, Reporte
 from .repository import DocumentoRepository, DocumentoVersionRepository, ReporteRepository
 from .schemas import ReporteCreate
@@ -315,6 +316,29 @@ def descargar_documento(session: Session, usuario, documento_id: uuid.UUID) -> t
     return documento, contenido
 
 
+def visualizar_documento(session: Session, usuario, documento_id: uuid.UUID) -> tuple[Documento, bytes]:
+    """Visor en pantalla (ADR-0011): misma autorización que `descargar_documento` (nunca el
+    auditor), pero solo para tipos que el navegador puede mostrar sin descargar (`es_visualizable`).
+    Para los demás formatos (Word/Excel, etc.) no hay visor; se usa la descarga existente."""
+    documento = _documento_o_404(session, documento_id)
+    if not es_visualizable(documento.mime_type):
+        raise ValueError("Este tipo de archivo no se puede previsualizar; descárguelo para verlo")
+    if not _puede_descargar_contenido(session, usuario, documento):
+        registrar_acceso(
+            session,
+            accion="documento_visualizacion_denegada",
+            usuario_id=usuario.id,
+            recurso=str(documento.id),
+            menor_id=documento.menor_id,
+        )
+        raise prohibido()
+    contenido = almacenamiento.leer(documento.referencia_archivo, documento.hash_sha256)
+    registrar_acceso(
+        session, accion="documento_visualizado", usuario_id=usuario.id, recurso=str(documento.id), menor_id=documento.menor_id
+    )
+    return documento, contenido
+
+
 def enviar_documento(session: Session, usuario, documento_id: uuid.UUID) -> Documento:
     documento = _documento_o_404(session, documento_id)
     if documento.estado_flujo != "borrador":
@@ -416,18 +440,36 @@ def crear_version(
         raise prohibido()
     _validar_tamanio(contenido)
 
+    # ADR-0011: la versión que queda reemplazada solo sirve como registro histórico, nunca vuelve
+    # a ser el archivo vigente; si es una imagen se guarda comprimida (misma ruta, se sobrescribe
+    # en el disco) para no acumular espacio con versiones viejas. PDF y otros formatos se
+    # conservan tal cual (comprensión de documento_version con comprimida=False).
+    hash_version = documento.hash_sha256
+    mime_version = documento.mime_type
+    tamanio_version = documento.tamanio_bytes
+    comprimida = False
+    if documento.referencia_archivo is not None:
+        contenido_anterior = almacenamiento.leer(documento.referencia_archivo, documento.hash_sha256)
+        comprimido, mime_comprimido, fue_comprimida = comprimir_si_es_imagen(contenido_anterior, documento.mime_type)
+        if fue_comprimida:
+            hash_version = almacenamiento.sobrescribir(documento.referencia_archivo, comprimido)
+            mime_version = mime_comprimido
+            tamanio_version = len(comprimido)
+            comprimida = True
+
     snapshot = DocumentoVersion(
         documento_id=documento.id,
         version=documento.version,
         referencia_archivo=documento.referencia_archivo,
-        hash_sha256=documento.hash_sha256,
+        hash_sha256=hash_version,
         nombre_original=documento.nombre_original,
-        mime_type=documento.mime_type,
-        tamanio_bytes=documento.tamanio_bytes,
+        mime_type=mime_version,
+        tamanio_bytes=tamanio_version,
         estado_flujo=documento.estado_flujo,
         creado_por=documento.creado_por,
         revisado_por=documento.revisado_por,
         motivo_devolucion=documento.motivo_devolucion,
+        comprimida=comprimida,
     )
     DocumentoVersionRepository(session).crear(snapshot)
 

@@ -62,6 +62,17 @@ def guardar(propietario_id: uuid.UUID, documento_id: uuid.UUID, version: int, co
     return relativa, hash_sha256
 
 
+def sobrescribir(ruta: str, contenido: bytes) -> str:
+    """Sobrescribe el archivo cifrado ya existente en `ruta` con nuevo contenido (ADR-0011: copia
+    comprimida de una versión que acaba de quedar reemplazada en el historial). Devuelve el nuevo
+    `hash_sha256` en claro para que el llamador actualice el registro de esa versión."""
+    absoluta = _ruta_absoluta(ruta)
+    hash_sha256 = calcular_hash(contenido)
+    token = _fernet().encrypt(contenido)
+    absoluta.write_bytes(token)
+    return hash_sha256
+
+
 def leer(ruta: str, hash_sha256_esperado: str | None = None) -> bytes:
     """Descifra el archivo en `ruta` (relativa a `ARCHIVOS_DIR`). Si se da `hash_sha256_esperado`,
     recalcula el hash del contenido en claro y lo compara (verificación de integridad al leer)."""

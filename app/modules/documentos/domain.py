@@ -33,6 +33,10 @@ CATEGORIAS_HOGAR = {"madre_habilitacion", "otros"}
 
 ESTADOS_FLUJO = ("borrador", "en_revision", "aprobado", "devuelto")
 
+# Visor en pantalla (ADR-0011): solo tipos que el navegador puede mostrar de forma nativa, sin
+# conversión en el servidor. Word/Excel y otros formatos se descargan para verlos, como ya hacían.
+MIME_VISUALIZABLES = {"application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp"}
+
 
 def seccion_de_categoria(categoria: str) -> str | None:
     return SECCION_POR_CATEGORIA.get(categoria)
@@ -40,3 +44,7 @@ def seccion_de_categoria(categoria: str) -> str | None:
 
 def seccion_de_tipo_reporte(tipo_reporte: str) -> str | None:
     return SECCION_POR_TIPO_REPORTE.get(tipo_reporte)
+
+
+def es_visualizable(mime_type: str) -> bool:
+    return mime_type in MIME_VISUALIZABLES

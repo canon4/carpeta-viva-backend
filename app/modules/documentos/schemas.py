@@ -44,6 +44,7 @@ class DocumentoVersionOut(BaseModel):
     creado_por: uuid.UUID | None = None
     revisado_por: uuid.UUID | None = None
     motivo_devolucion: str | None = None
+    comprimida: bool = False
     created_at: datetime
 
 

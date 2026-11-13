@@ -2606,6 +2606,52 @@
         }
       }
     },
+    "/api/v1/documentos/{documento_id}/vista": {
+      "get": {
+        "tags": [
+          "Gestión Documental"
+        ],
+        "summary": "Ver en pantalla (solo PDF e imágenes)",
+        "operationId": "visualizar_documento_endpoint_api_v1_documentos__documento_id__vista_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "documento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Documento Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/documentos/{documento_id}/enviar": {
       "put": {
         "tags": [
@@ -7270,6 +7316,11 @@
               }
             ],
             "title": "Motivo Devolucion"
+          },
+          "comprimida": {
+            "type": "boolean",
+            "title": "Comprimida",
+            "default": false
           },
           "created_at": {
             "type": "string",

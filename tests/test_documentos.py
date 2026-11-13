@@ -283,6 +283,100 @@ def test_descarga_denegada_sin_permiso_seccion(client, session_factory):
     assert r.status_code == 403
 
 
+def _imagen_png(color=(255, 0, 0), tamanio=(400, 400)) -> bytes:
+    from io import BytesIO
+
+    from PIL import Image
+
+    buf = BytesIO()
+    Image.new("RGB", tamanio, color).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_visor_muestra_pdf_e_imagen_pero_no_otros_formatos(client, session_factory):
+    h_admin, h_defensor, h_madre, menor_id, _ = _crear_menor_con_defensor_y_permiso_salud(
+        client, session_factory, "visor1"
+    )
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "salud", "titulo": "Foto"},
+        files={"archivo": ("foto.png", _imagen_png(), "image/png")},
+        headers=h_madre,
+    )
+    documento_id = r.json()["id"]
+
+    r = client.get(f"/api/v1/documentos/{documento_id}/vista", headers=h_madre)
+    assert r.status_code == 200
+    assert "inline" in r.headers["content-disposition"]
+
+    # Documento de texto plano: no es un tipo visualizable, el visor lo rechaza (se descarga en su lugar).
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "salud", "titulo": "Nota"},
+        files=archivo(),
+        headers=h_madre,
+    )
+    documento_id_txt = r.json()["id"]
+    r = client.get(f"/api/v1/documentos/{documento_id_txt}/vista", headers=h_madre)
+    assert r.status_code == 422
+
+
+def test_visor_respeta_autorizacion_de_seccion(client, session_factory):
+    h_admin, h_defensor, h_madre, menor_id, _ = _crear_menor_con_defensor_y_permiso_salud(
+        client, session_factory, "visor2"
+    )
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "salud", "titulo": "Foto"},
+        files={"archivo": ("foto.png", _imagen_png(), "image/png")},
+        headers=h_madre,
+    )
+    documento_id = r.json()["id"]
+
+    uid_otra = crear_usuario(session_factory, "madre_visor_ajena@prueba.local", "madre")
+    h_otra_madre = {"Authorization": f"Bearer {login(client, 'madre_visor_ajena@prueba.local')}"}
+    r = client.get(f"/api/v1/documentos/{documento_id}/vista", headers=h_otra_madre)
+    assert r.status_code == 403
+
+    h_auditor = auth_header(client, session_factory, "auditor_visor2@prueba.local", "auditor")
+    r = client.get(f"/api/v1/documentos/{documento_id}/vista", headers=h_auditor)
+    assert r.status_code == 403
+
+
+def test_nueva_version_comprime_la_imagen_reemplazada(client, session_factory):
+    h_admin, h_defensor, h_madre, menor_id, _ = _crear_menor_con_defensor_y_permiso_salud(
+        client, session_factory, "comp1"
+    )
+    imagen_original = _imagen_png()
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "salud", "titulo": "Foto"},
+        files={"archivo": ("foto.png", imagen_original, "image/png")},
+        headers=h_madre,
+    )
+    documento_id = r.json()["id"]
+    client.put(f"/api/v1/documentos/{documento_id}/enviar", headers=h_madre)
+    client.put(f"/api/v1/documentos/{documento_id}/devolver", json={"motivo": "corregir"}, headers=h_defensor)
+
+    r = client.post(
+        f"/api/v1/documentos/{documento_id}/version",
+        files={"archivo": ("foto2.png", _imagen_png(color=(0, 255, 0)), "image/png")},
+        headers=h_madre,
+    )
+    assert r.status_code == 200
+
+    r = client.get(f"/api/v1/documentos/{documento_id}/versiones", headers=h_madre)
+    version_1 = r.json()[0]
+    assert version_1["comprimida"] is True
+    assert version_1["mime_type"] == "image/jpeg"
+    assert version_1["tamanio_bytes"] < len(imagen_original)
+
+    # El contenido descargado de esa versión ya es la copia comprimida (JPEG), no el PNG original.
+    r = client.get(f"/api/v1/documentos/{documento_id}/versiones/1/contenido", headers=h_madre)
+    assert r.content != imagen_original
+    assert len(r.content) < len(imagen_original)
+
+
 def test_endpoint_agregador_por_seccion(client, session_factory):
     h_admin, h_defensor, h_madre, menor_id, uid_madre = _crear_menor_con_defensor_y_permiso_salud(
         client, session_factory, "sec1"
