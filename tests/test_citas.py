@@ -390,3 +390,63 @@ def test_coordinador_y_profesional_no_pueden_escribir_reunion_familia(client, se
         headers=h_psico,
     )
     assert r.status_code == 403
+
+
+def test_madre_de_otro_hogar_no_puede_escribir_cita(client, session_factory):
+    """ADR-0015: el rol fija *quién* escribe, pero `_puede_ver` (vía `puede_ver_menor`) sigue
+    fijando *dónde*: una madre dueña del tipo `medica` no puede crear/editar citas de un menor
+    que no está en su hogar."""
+    zona_id, hogar_propio = crear_zona_y_hogar(session_factory, "Zona c13 propio")
+    _, hogar_ajeno = crear_zona_y_hogar(session_factory, "Zona c13 ajeno")
+    h_admin = auth_header(client, session_factory, "admin_c13@prueba.local", "admin")
+    menor_ajeno_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_ajeno_id, hogar_ajeno)
+
+    h_madre = _madre_del_hogar(client, session_factory, hogar_propio, "madre_c13@prueba.local", "900-c13")
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_ajeno_id, "tipo": "medica", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_madre,
+    )
+    assert r.status_code == 403
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_ajeno_id, "tipo": "medica", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_admin,
+    )
+    cita_id = r.json()["id"]
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Otro lugar"}, headers=h_madre)
+    assert r.status_code == 403
+
+
+def test_defensor_de_otro_menor_no_puede_escribir_reunion_familia(client, session_factory):
+    """ADR-0015: el defensor dueño de `reunion_familia` solo lo es para los menores que tiene
+    asignados; no puede crear/editar la reunión de un menor ajeno aunque el tipo coincida."""
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c14")
+    h_admin = auth_header(client, session_factory, "admin_c14@prueba.local", "admin")
+    menor_propio_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_propio_id, hogar_id)
+    menor_ajeno_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_ajeno_id, hogar_id)
+
+    # El defensor solo tiene asignado menor_propio_id, no menor_ajeno_id.
+    _defensor_del_menor(client, session_factory, menor_propio_id, "defensor_c14@prueba.local")
+    h_defensor = {"Authorization": f"Bearer {login(client, 'defensor_c14@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_ajeno_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_defensor,
+    )
+    assert r.status_code == 403
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_ajeno_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_admin,
+    )
+    cita_id = r.json()["id"]
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Otro lugar"}, headers=h_defensor)
+    assert r.status_code == 403
