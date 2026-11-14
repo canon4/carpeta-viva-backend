@@ -3,11 +3,16 @@
 Camas, muebles, personas que viven en el hogar y red de apoyo. Sin borrado físico (ADR-0009,
 sección 3): `InventarioItem` se marca `retirado`, `HogarConviviente`/`HogarRedApoyo` se marcan
 `activo=false`.
+
+ADR-0014: `InventarioItem.recibido` separa el pedido (coordinador, `recibido=false`) de su
+confirmación de llegada (madre/admin, `recibido=true`). `InventarioItemFoto` guarda evidencia
+fotográfica de la recepción, cifrada con el mismo mecanismo que `documentos`
+(`app/core/almacenamiento.py`), sin versionado.
 """
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, CheckConstraint, Date, ForeignKey, Integer, String, Uuid
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, Timestamps, UuidPk
@@ -31,6 +36,25 @@ class InventarioItem(UuidPk, Timestamps, Base):
     cantidad: Mapped[int] = mapped_column(Integer, default=1)
     estado: Mapped[str] = mapped_column(String(20), default="bueno")
     registrado_por: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"))
+    # ADR-0014: False = pedido del coordinador, aún no llega. True = ya está físicamente en el
+    # hogar (lo creó la madre/admin directo, o el pedido ya se confirmó). `server_default=true`
+    # solo afecta a filas migradas sin valor explícito (ítems anteriores a esta ADR); la
+    # aplicación siempre manda el valor explícito según el rol de quien crea.
+    recibido: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+
+
+class InventarioItemFoto(UuidPk, Base):
+    """Evidencia fotográfica de la recepción de un ítem (ADR-0014, sección 2). Sin versionado:
+    una foto subida por error se queda, no se reemplaza ni se borra."""
+
+    __tablename__ = "inventario_item_fotos"
+
+    item_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("inventario_items.id"), index=True)
+    referencia_archivo: Mapped[str] = mapped_column(String(255))
+    mime_type: Mapped[str] = mapped_column(String(100))
+    tamanio_bytes: Mapped[int] = mapped_column(Integer)
+    subido_por: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"))
+    creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class HogarConviviente(UuidPk, Timestamps, Base):

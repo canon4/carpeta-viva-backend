@@ -4,17 +4,32 @@ Camas, muebles, personas que viven y red de apoyo. Autorización por hogar (ADR-
 y 3): `zonas_hogares.application.puede_ver_hogar`/`puede_gestionar_hogar`, sin excepción por
 tipo. Nunca se borra físico: `InventarioItem` se marca `retirado`, `HogarConviviente`/
 `HogarRedApoyo` se marcan `activo=false`.
+
+ADR-0014: separa el pedido (coordinador) de su recepción (madre/admin). `crear_item` decide
+`recibido` según el rol de quien crea, no según un campo del cliente. `actualizar_item` exige
+coordinador/admin e ítem aún no recibido para tocar tipo/descripción/cantidad del pedido.
+`confirmar_recepcion_item` es el evento, una sola vez, de marcar la llegada con su estado físico.
+Las fotos de evidencia reutilizan `app/core/almacenamiento.py` (mismo cifrado que `documentos`,
+ADR-0008), sin versionado.
 """
 import uuid
 
 from sqlalchemy.orm import Session
 
+from app.core import almacenamiento
 from app.core.audit import registrar_acceso
 from app.core.errors import no_encontrado, prohibido
+from app.modules.auth.domain import Rol
 from app.modules.zonas_hogares.application import puede_gestionar_hogar, puede_ver_hogar
 
-from .models import HogarConviviente, HogarRedApoyo, InventarioItem
-from .repository import HogarConvivienteRepository, HogarRedApoyoRepository, InventarioItemRepository
+from .domain import FOTO_TAMANIO_MAXIMO_BYTES, FOTOS_MAXIMO_POR_ITEM, MIME_FOTOS_PERMITIDOS
+from .models import HogarConviviente, HogarRedApoyo, InventarioItem, InventarioItemFoto
+from .repository import (
+    HogarConvivienteRepository,
+    HogarRedApoyoRepository,
+    InventarioItemFotoRepository,
+    InventarioItemRepository,
+)
 from .schemas import (
     ConvivienteCreate,
     ConvivienteUpdate,
@@ -32,12 +47,18 @@ def crear_item(session: Session, usuario, datos: InventarioItemCreate) -> Invent
     if not puede_gestionar_hogar(session, usuario, datos.hogar_id):
         registrar_acceso(session, accion="inventario_item_creacion_denegada", usuario_id=usuario.id, recurso=str(datos.hogar_id))
         raise prohibido()
+    # ADR-0014, sección 1: `recibido` depende de quién crea, nunca de un campo del cliente (para
+    # que no se pueda fingir una entrega que no pasó por la madre). El coordinador registra un
+    # pedido (`recibido=False`); el `estado` que mande se ignora porque todavía no existe nada
+    # físico que calificar. Madre y admin registran algo que ya está en el hogar.
+    es_pedido = usuario.rol == Rol.COORDINADOR.value
     item = InventarioItem(
         hogar_id=datos.hogar_id,
         tipo=datos.tipo,
         descripcion=datos.descripcion,
         cantidad=datos.cantidad,
-        estado=datos.estado,
+        estado="bueno" if es_pedido else datos.estado,
+        recibido=not es_pedido,
         registrado_por=usuario.id,
     )
     item = InventarioItemRepository(session).crear(item)
@@ -66,6 +87,19 @@ def actualizar_item(session: Session, usuario, item_id: uuid.UUID, datos: Invent
     if not puede_gestionar_hogar(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="inventario_item_actualizacion_denegada", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
+    # ADR-0014, sección 1: editar tipo/descripción/cantidad es editar el pedido, no el estado
+    # físico; solo coordinador/admin y solo mientras no se haya confirmado la recepción.
+    toca_pedido = datos.tipo is not None or datos.descripcion is not None or datos.cantidad is not None
+    if toca_pedido:
+        if usuario.rol not in (Rol.COORDINADOR.value, Rol.ADMIN.value):
+            registrar_acceso(
+                session, accion="inventario_item_actualizacion_denegada", usuario_id=usuario.id, recurso=str(item.id)
+            )
+            raise prohibido()
+        if item.recibido:
+            raise ValueError("El ítem ya fue recibido; no se puede editar el pedido original")
+    if datos.tipo is not None:
+        item.tipo = datos.tipo
     if datos.descripcion is not None:
         item.descripcion = datos.descripcion
     if datos.cantidad is not None:
@@ -75,6 +109,92 @@ def actualizar_item(session: Session, usuario, item_id: uuid.UUID, datos: Invent
     item = InventarioItemRepository(session).guardar(item)
     registrar_acceso(session, accion="inventario_item_actualizado", usuario_id=usuario.id, recurso=str(item.id))
     return item
+
+
+def confirmar_recepcion_item(session: Session, usuario, item_id: uuid.UUID, estado: str) -> InventarioItem:
+    """ADR-0014, sección 1: confirmar que un pedido llegó, con su estado físico. Solo madre (del
+    hogar) o admin; un evento que pasa una sola vez por ítem."""
+    item = _item_o_404(session, item_id)
+    if not puede_gestionar_hogar(session, usuario, item.hogar_id):
+        registrar_acceso(
+            session, accion="inventario_item_recepcion_denegada", usuario_id=usuario.id, recurso=str(item.id)
+        )
+        raise prohibido()
+    if usuario.rol not in (Rol.MADRE.value, Rol.ADMIN.value):
+        registrar_acceso(
+            session, accion="inventario_item_recepcion_denegada", usuario_id=usuario.id, recurso=str(item.id)
+        )
+        raise prohibido()
+    if item.recibido:
+        raise ValueError("El ítem ya estaba marcado como recibido")
+    item.estado = estado
+    item.recibido = True
+    item = InventarioItemRepository(session).guardar(item)
+    registrar_acceso(
+        session, accion="inventario_item_recepcion_confirmada", usuario_id=usuario.id, recurso=str(item.id)
+    )
+    return item
+
+
+# ---------------------------------------------------------------------------
+# Fotos de evidencia de recepción
+# ---------------------------------------------------------------------------
+
+def subir_foto_item(
+    session: Session, usuario, item_id: uuid.UUID, contenido: bytes, mime_type: str, nombre_archivo: str
+) -> InventarioItemFoto:
+    item = _item_o_404(session, item_id)
+    if not puede_gestionar_hogar(session, usuario, item.hogar_id):
+        registrar_acceso(session, accion="inventario_foto_subida_denegada", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
+    if usuario.rol not in (Rol.MADRE.value, Rol.ADMIN.value):
+        registrar_acceso(session, accion="inventario_foto_subida_denegada", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
+    if mime_type not in MIME_FOTOS_PERMITIDOS:
+        raise ValueError("Tipo de imagen no permitido; use JPEG, PNG o WEBP")
+    if len(contenido) == 0:
+        raise ValueError("La foto está vacía")
+    if len(contenido) > FOTO_TAMANIO_MAXIMO_BYTES:
+        raise ValueError(f"La foto supera el tamaño máximo permitido ({FOTO_TAMANIO_MAXIMO_BYTES // (1024 * 1024)} MB)")
+    if InventarioItemFotoRepository(session).contar(item_id) >= FOTOS_MAXIMO_POR_ITEM:
+        raise ValueError(f"Se alcanzó el máximo de {FOTOS_MAXIMO_POR_ITEM} fotos por ítem")
+
+    foto_id = uuid.uuid4()
+    referencia, _hash = almacenamiento.guardar(item.hogar_id, foto_id, 1, contenido)
+    foto = InventarioItemFoto(
+        id=foto_id,
+        item_id=item_id,
+        referencia_archivo=referencia,
+        mime_type=mime_type,
+        tamanio_bytes=len(contenido),
+        subido_por=usuario.id,
+    )
+    foto = InventarioItemFotoRepository(session).crear(foto)
+    registrar_acceso(session, accion="inventario_foto_subida", usuario_id=usuario.id, recurso=str(foto.id))
+    return foto
+
+
+def listar_fotos_item(session: Session, usuario, item_id: uuid.UUID) -> list[InventarioItemFoto]:
+    item = _item_o_404(session, item_id)
+    if not puede_ver_hogar(session, usuario, item.hogar_id):
+        registrar_acceso(session, accion="inventario_fotos_listado_denegado", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
+    resultado = InventarioItemFotoRepository(session).listar(item_id)
+    registrar_acceso(session, accion="inventario_fotos_listadas", usuario_id=usuario.id, recurso=str(item.id))
+    return resultado
+
+
+def obtener_foto_item(session: Session, usuario, item_id: uuid.UUID, foto_id: uuid.UUID) -> tuple[InventarioItemFoto, bytes]:
+    item = _item_o_404(session, item_id)
+    if not puede_ver_hogar(session, usuario, item.hogar_id):
+        registrar_acceso(session, accion="inventario_foto_consulta_denegada", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
+    foto = InventarioItemFotoRepository(session).por_id(foto_id)
+    if foto is None or foto.item_id != item_id:
+        raise no_encontrado("Foto no encontrada")
+    contenido = almacenamiento.leer(foto.referencia_archivo)
+    registrar_acceso(session, accion="inventario_foto_consultada", usuario_id=usuario.id, recurso=str(foto.id))
+    return foto, contenido
 
 
 # ---------------------------------------------------------------------------

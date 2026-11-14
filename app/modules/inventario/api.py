@@ -1,6 +1,8 @@
+import re
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_session
@@ -11,26 +13,45 @@ from .application import (
     actualizar_conviviente,
     actualizar_item,
     actualizar_red_apoyo,
+    confirmar_recepcion_item,
     crear_conviviente,
     crear_item,
     crear_red_apoyo,
     listar_convivientes,
+    listar_fotos_item,
     listar_items,
     listar_red_apoyo,
+    obtener_foto_item,
+    subir_foto_item,
 )
 from .schemas import (
     ConvivienteCreate,
     ConvivienteOut,
     ConvivienteUpdate,
     InventarioItemCreate,
+    InventarioItemFotoOut,
     InventarioItemOut,
     InventarioItemUpdate,
+    InventarioRecepcionConfirmar,
     RedApoyoCreate,
     RedApoyoOut,
     RedApoyoUpdate,
 )
 
 router = APIRouter(prefix="/inventario", tags=["Inventario del Hogar"])
+
+# Mismo filtro que `documentos.api` para `Content-Disposition` (caracteres de control/comillas
+# nunca deben pasar sin filtrar desde un nombre de archivo provisto por el cliente).
+_CONTROL_O_COMILLAS = re.compile(r'[\x00-\x1f\x7f"]')
+
+
+def _cabeceras_vista_foto(nombre_original: str | None) -> dict[str, str]:
+    nombre = _CONTROL_O_COMILLAS.sub("", nombre_original or "").strip() or "foto"
+    return {
+        "Content-Disposition": f'inline; filename="{nombre}"',
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+    }
 
 
 @router.get("/_estado", summary="Estado del módulo")
@@ -63,7 +84,71 @@ def actualizar_item_endpoint(
     session: Session = Depends(get_session),
     usuario: Usuario = Depends(usuario_actual),
 ) -> InventarioItemOut:
-    return actualizar_item(session, usuario, item_id, datos)
+    try:
+        return actualizar_item(session, usuario, item_id, datos)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.put("/items/{item_id}/recepcion", response_model=InventarioItemOut, summary="Confirmar recepción de un ítem")
+def confirmar_recepcion_endpoint(
+    item_id: uuid.UUID,
+    datos: InventarioRecepcionConfirmar,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> InventarioItemOut:
+    try:
+        return confirmar_recepcion_item(session, usuario, item_id, datos.estado)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.post(
+    "/items/{item_id}/fotos",
+    response_model=InventarioItemFotoOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Subir foto de evidencia de recepción",
+)
+async def subir_foto_endpoint(
+    item_id: uuid.UUID,
+    archivo: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> InventarioItemFotoOut:
+    contenido = await archivo.read()
+    try:
+        return subir_foto_item(
+            session,
+            usuario,
+            item_id,
+            contenido,
+            archivo.content_type or "application/octet-stream",
+            archivo.filename or "foto",
+        )
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.get("/items/{item_id}/fotos", response_model=list[InventarioItemFotoOut], summary="Listar fotos de un ítem")
+def listar_fotos_endpoint(
+    item_id: uuid.UUID, session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> list[InventarioItemFotoOut]:
+    return listar_fotos_item(session, usuario, item_id)
+
+
+@router.get("/items/{item_id}/fotos/{foto_id}", summary="Ver foto de evidencia")
+def obtener_foto_endpoint(
+    item_id: uuid.UUID,
+    foto_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> Response:
+    foto, contenido = obtener_foto_item(session, usuario, item_id, foto_id)
+    return Response(
+        content=contenido,
+        media_type=foto.mime_type or "application/octet-stream",
+        headers=_cabeceras_vista_foto(f"foto-{foto.id}"),
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ class InventarioItemCreate(BaseModel):
 
 
 class InventarioItemUpdate(BaseModel):
+    tipo: str | None = Field(default=None, pattern="^(cama|mueble|otro)$")
     descripcion: str | None = Field(default=None, min_length=1, max_length=255)
     cantidad: int | None = Field(default=None, ge=1)
     estado: str | None = Field(default=None, pattern="^(bueno|regular|malo|retirado)$")
@@ -35,9 +36,29 @@ class InventarioItemOut(BaseModel):
     descripcion: str
     cantidad: int
     estado: str
+    recibido: bool
     registrado_por: uuid.UUID
     created_at: datetime
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Recepción y fotos de evidencia (ADR-0014)
+# ---------------------------------------------------------------------------
+
+class InventarioRecepcionConfirmar(BaseModel):
+    estado: str = Field(pattern="^(bueno|regular|malo)$")
+
+
+class InventarioItemFotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    item_id: uuid.UUID
+    mime_type: str
+    tamanio_bytes: int
+    subido_por: uuid.UUID
+    creado_en: datetime
 
 
 # ---------------------------------------------------------------------------

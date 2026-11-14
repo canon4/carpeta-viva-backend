@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import HogarConviviente, HogarRedApoyo, InventarioItem
+from .models import HogarConviviente, HogarRedApoyo, InventarioItem, InventarioItemFoto
 
 
 class InventarioItemRepository:
@@ -31,6 +31,26 @@ class InventarioItemRepository:
     def guardar(self, item: InventarioItem) -> InventarioItem:
         self.session.commit()
         return item
+
+
+class InventarioItemFotoRepository:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def crear(self, foto: InventarioItemFoto) -> InventarioItemFoto:
+        self.session.add(foto)
+        self.session.commit()
+        return foto
+
+    def por_id(self, foto_id: uuid.UUID) -> InventarioItemFoto | None:
+        return self.session.get(InventarioItemFoto, foto_id)
+
+    def listar(self, item_id: uuid.UUID) -> list[InventarioItemFoto]:
+        consulta = select(InventarioItemFoto).where(InventarioItemFoto.item_id == item_id)
+        return list(self.session.scalars(consulta.order_by(InventarioItemFoto.creado_en)))
+
+    def contar(self, item_id: uuid.UUID) -> int:
+        return len(self.listar(item_id))
 
 
 class HogarConvivienteRepository:

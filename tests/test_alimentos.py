@@ -273,3 +273,117 @@ def test_auditor_solo_ve_pero_no_gestiona(client, session_factory):
 
 def test_sin_token_es_401(client):
     assert client.get("/api/v1/alimentos?hogar_id=00000000-0000-0000-0000-000000000000").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Checklist reutilizable (ADR-0014, sección 4)
+# ---------------------------------------------------------------------------
+
+def test_crear_checklist_y_comprar(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona check1")
+    uid_madre = crear_usuario(session_factory, "madre_check1@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "check-1")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_check1@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/alimentos/checklist",
+        json={"hogar_id": hogar_id, "descripcion": "Arroz", "perecedero": False, "unidad_por_defecto": "kg"},
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    checklist_item_id = r.json()["id"]
+    assert r.json()["activo"] is True
+
+    r = client.get(f"/api/v1/alimentos/checklist?hogar_id={hogar_id}", headers=h_madre)
+    assert r.status_code == 200
+    assert any(i["id"] == checklist_item_id for i in r.json())
+
+    r = client.post(
+        f"/api/v1/alimentos/checklist/{checklist_item_id}/comprar",
+        json={"fecha_ingreso": "2026-02-01", "cantidad": 20},
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    datos = r.json()
+    assert datos["descripcion"] == "Arroz"
+    assert datos["perecedero"] is False
+    assert datos["unidad"] == "kg"
+    assert datos["checklist_item_id"] == checklist_item_id
+    assert datos["cantidad"] == 20
+
+
+def test_comprar_de_checklist_respeta_validar_perecedero(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona check2")
+    h_admin = auth_header(client, session_factory, "admin_check2@prueba.local", "admin")
+
+    checklist_item_id = client.post(
+        "/api/v1/alimentos/checklist",
+        json={"hogar_id": hogar_id, "descripcion": "Sal", "perecedero": False},
+        headers=h_admin,
+    ).json()["id"]
+
+    r = client.post(
+        f"/api/v1/alimentos/checklist/{checklist_item_id}/comprar",
+        json={"fecha_ingreso": "2026-02-01", "fecha_vencimiento": "2026-03-01", "cantidad": 2},
+        headers=h_admin,
+    )
+    assert r.status_code == 422
+
+
+def test_comprar_de_checklist_hereda_perecedero_y_permite_fecha_vencimiento(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona check3")
+    h_admin = auth_header(client, session_factory, "admin_check3@prueba.local", "admin")
+
+    checklist_item_id = client.post(
+        "/api/v1/alimentos/checklist",
+        json={"hogar_id": hogar_id, "descripcion": "Leche", "perecedero": True, "unidad_por_defecto": "L"},
+        headers=h_admin,
+    ).json()["id"]
+
+    r = client.post(
+        f"/api/v1/alimentos/checklist/{checklist_item_id}/comprar",
+        json={"fecha_ingreso": "2026-02-01", "fecha_vencimiento": "2026-02-10", "cantidad": 3},
+        headers=h_admin,
+    )
+    assert r.status_code == 201
+    assert r.json()["fecha_vencimiento"] == "2026-02-10"
+    assert r.json()["unidad"] == "L"
+
+
+def test_actualizar_checklist_desactiva(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona check4")
+    h_admin = auth_header(client, session_factory, "admin_check4@prueba.local", "admin")
+
+    checklist_item_id = client.post(
+        "/api/v1/alimentos/checklist",
+        json={"hogar_id": hogar_id, "descripcion": "Café", "perecedero": False},
+        headers=h_admin,
+    ).json()["id"]
+
+    r = client.put(f"/api/v1/alimentos/checklist/{checklist_item_id}", json={"activo": False}, headers=h_admin)
+    assert r.status_code == 200
+    assert r.json()["activo"] is False
+
+    r = client.get(f"/api/v1/alimentos/checklist?hogar_id={hogar_id}", headers=h_admin)
+    assert all(i["id"] != checklist_item_id for i in r.json())
+
+    r = client.get(f"/api/v1/alimentos/checklist?hogar_id={hogar_id}&incluir_inactivos=true", headers=h_admin)
+    assert any(i["id"] == checklist_item_id for i in r.json())
+
+
+def test_madre_de_otro_hogar_no_crea_checklist(client, session_factory):
+    _, hogar_id = crear_zona_y_hogar(session_factory, "Zona check5")
+    _, hogar_ajeno = crear_zona_y_hogar(session_factory, "Zona check5-ajena")
+
+    uid_madre = crear_usuario(session_factory, "madre_check5@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "check-5")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_check5@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/alimentos/checklist",
+        json={"hogar_id": hogar_ajeno, "descripcion": "Azúcar", "perecedero": False},
+        headers=h_madre,
+    )
+    assert r.status_code == 403

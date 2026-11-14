@@ -7,7 +7,30 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import AlimentoItem
+from .models import AlimentoChecklistItem, AlimentoItem
+
+
+class AlimentoChecklistItemRepository:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def crear(self, item: AlimentoChecklistItem) -> AlimentoChecklistItem:
+        self.session.add(item)
+        self.session.commit()
+        return item
+
+    def por_id(self, item_id: uuid.UUID) -> AlimentoChecklistItem | None:
+        return self.session.get(AlimentoChecklistItem, item_id)
+
+    def listar(self, hogar_id: uuid.UUID, solo_activos: bool = True) -> list[AlimentoChecklistItem]:
+        consulta = select(AlimentoChecklistItem).where(AlimentoChecklistItem.hogar_id == hogar_id)
+        if solo_activos:
+            consulta = consulta.where(AlimentoChecklistItem.activo.is_(True))
+        return list(self.session.scalars(consulta.order_by(AlimentoChecklistItem.creado_en)))
+
+    def guardar(self, item: AlimentoChecklistItem) -> AlimentoChecklistItem:
+        self.session.commit()
+        return item
 
 
 class AlimentoItemRepository:

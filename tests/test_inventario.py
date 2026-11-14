@@ -237,3 +237,234 @@ def test_crear_y_desactivar_red_apoyo(client, session_factory):
 
 def test_sin_token_es_401(client):
     assert client.get("/api/v1/inventario/items?hogar_id=00000000-0000-0000-0000-000000000000").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Pedido y recepción (ADR-0014)
+# ---------------------------------------------------------------------------
+
+def test_coordinador_crea_pedido_no_recibido(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped1")
+    h_coord = auth_header(client, session_factory, "coord_ped1@prueba.local", "coordinador", zona_id)
+
+    r = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama nueva", "cantidad": 5, "estado": "malo"},
+        headers=h_coord,
+    )
+    assert r.status_code == 201
+    datos = r.json()
+    assert datos["recibido"] is False
+    # El `estado` que mande el coordinador se ignora en la creación: no existe nada físico aún.
+    assert datos["estado"] == "bueno"
+
+
+def test_madre_crea_directo_recibido(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped2")
+    uid_madre = crear_usuario(session_factory, "madre_ped2@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "ped-2")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_ped2@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "mueble", "descripcion": "Armario", "cantidad": 1, "estado": "bueno"},
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    assert r.json()["recibido"] is True
+
+
+def test_coordinador_no_puede_confirmar_recepcion(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped3")
+    h_coord = auth_header(client, session_factory, "coord_ped3@prueba.local", "coordinador", zona_id)
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 1},
+        headers=h_coord,
+    ).json()["id"]
+
+    r = client.put(f"/api/v1/inventario/items/{item_id}/recepcion", json={"estado": "bueno"}, headers=h_coord)
+    assert r.status_code == 403
+
+
+def test_madre_confirma_recepcion_de_pedido_del_coordinador(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped4")
+    h_coord = auth_header(client, session_factory, "coord_ped4@prueba.local", "coordinador", zona_id)
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 3},
+        headers=h_coord,
+    ).json()["id"]
+
+    uid_madre = crear_usuario(session_factory, "madre_ped4@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "ped-4")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_ped4@prueba.local')}"}
+
+    r = client.put(f"/api/v1/inventario/items/{item_id}/recepcion", json={"estado": "regular"}, headers=h_madre)
+    assert r.status_code == 200
+    assert r.json()["recibido"] is True
+    assert r.json()["estado"] == "regular"
+
+
+def test_confirmar_recepcion_dos_veces_es_422(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped5")
+    h_admin = auth_header(client, session_factory, "admin_ped5@prueba.local", "admin")
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 1, "estado": "bueno"},
+        headers=h_admin,
+    ).json()["id"]
+    # El admin ya la crea `recibido=true`; confirmar de nuevo debe rechazarse.
+    r = client.put(f"/api/v1/inventario/items/{item_id}/recepcion", json={"estado": "bueno"}, headers=h_admin)
+    assert r.status_code == 422
+
+
+def test_coordinador_no_edita_tipo_cantidad_de_item_recibido(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped6")
+    h_coord = auth_header(client, session_factory, "coord_ped6@prueba.local", "coordinador", zona_id)
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 2},
+        headers=h_coord,
+    ).json()["id"]
+
+    uid_madre = crear_usuario(session_factory, "madre_ped6@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "ped-6")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_ped6@prueba.local')}"}
+    r = client.put(f"/api/v1/inventario/items/{item_id}/recepcion", json={"estado": "bueno"}, headers=h_madre)
+    assert r.status_code == 200
+
+    r = client.put(f"/api/v1/inventario/items/{item_id}", json={"cantidad": 4}, headers=h_coord)
+    assert r.status_code == 422
+
+
+def test_madre_no_puede_editar_pedido_ajeno(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ped7")
+    h_coord = auth_header(client, session_factory, "coord_ped7@prueba.local", "coordinador", zona_id)
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 2},
+        headers=h_coord,
+    ).json()["id"]
+
+    uid_madre = crear_usuario(session_factory, "madre_ped7@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "ped-7")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_ped7@prueba.local')}"}
+
+    r = client.put(f"/api/v1/inventario/items/{item_id}", json={"cantidad": 10}, headers=h_madre)
+    assert r.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Fotos de evidencia (ADR-0014, sección 2)
+# ---------------------------------------------------------------------------
+
+def _item_recibido_de_madre(client, session_factory, zona_nombre, email_madre, numero_doc):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, zona_nombre)
+    uid_madre = crear_usuario(session_factory, email_madre, "madre")
+    madre_id = crear_madre(session_factory, uid_madre, numero_doc)
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, email_madre)}"}
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 1},
+        headers=h_madre,
+    ).json()["id"]
+    return hogar_id, item_id, h_madre
+
+
+def test_subir_foto_valida(client, session_factory):
+    hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto1", "madre_foto1@prueba.local", "foto-1")
+
+    r = client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    assert r.json()["mime_type"] == "image/jpeg"
+
+
+def test_subir_foto_tipo_invalido_es_422(client, session_factory):
+    hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto2", "madre_foto2@prueba.local", "foto-2")
+
+    r = client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia.pdf", b"contenido-sintetico", "application/pdf")},
+        headers=h_madre,
+    )
+    assert r.status_code == 422
+
+
+def test_subir_foto_excede_tamanio_es_422(client, session_factory):
+    hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto3", "madre_foto3@prueba.local", "foto-3")
+
+    contenido_grande = b"a" * (5 * 1024 * 1024 + 1)
+    r = client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia.jpg", contenido_grande, "image/jpeg")},
+        headers=h_madre,
+    )
+    assert r.status_code == 422
+
+
+def test_subir_mas_de_6_fotos_es_422(client, session_factory):
+    hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto4", "madre_foto4@prueba.local", "foto-4")
+
+    for i in range(6):
+        r = client.post(
+            f"/api/v1/inventario/items/{item_id}/fotos",
+            files={"archivo": (f"evidencia{i}.jpg", b"contenido-sintetico", "image/jpeg")},
+            headers=h_madre,
+        )
+        assert r.status_code == 201
+
+    r = client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia7.jpg", b"contenido-sintetico", "image/jpeg")},
+        headers=h_madre,
+    )
+    assert r.status_code == 422
+
+
+def test_coordinador_no_puede_subir_foto(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona foto5")
+    h_coord = auth_header(client, session_factory, "coord_foto5@prueba.local", "coordinador", zona_id)
+    item_id = client.post(
+        "/api/v1/inventario/items",
+        json={"hogar_id": hogar_id, "tipo": "cama", "descripcion": "Cama", "cantidad": 1},
+        headers=h_coord,
+    ).json()["id"]
+
+    r = client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        headers=h_coord,
+    )
+    assert r.status_code == 403
+
+
+def test_lectura_de_fotos_abierta_a_quien_ve_el_hogar(client, session_factory):
+    hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto6", "madre_foto6@prueba.local", "foto-6")
+    client.post(
+        f"/api/v1/inventario/items/{item_id}/fotos",
+        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        headers=h_madre,
+    )
+    foto_id = client.get(f"/api/v1/inventario/items/{item_id}/fotos", headers=h_madre).json()[0]["id"]
+
+    r = client.get(f"/api/v1/inventario/items/{item_id}/fotos", headers=h_madre)
+    assert r.status_code == 200
+    assert len(r.json()) == 1
+
+    r = client.get(f"/api/v1/inventario/items/{item_id}/fotos/{foto_id}", headers=h_madre)
+    assert r.status_code == 200
+    assert r.content == b"contenido-sintetico"
+
+    h_auditor = auth_header(client, session_factory, "auditor_foto6@prueba.local", "auditor")
+    r = client.get(f"/api/v1/inventario/items/{item_id}/fotos", headers=h_auditor)
+    assert r.status_code == 200

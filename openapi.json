@@ -3150,6 +3150,228 @@
         }
       }
     },
+    "/api/v1/inventario/items/{item_id}/recepcion": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Confirmar recepción de un ítem",
+        "operationId": "confirmar_recepcion_endpoint_api_v1_inventario_items__item_id__recepcion_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventarioRecepcionConfirmar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/items/{item_id}/fotos": {
+      "post": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Subir foto de evidencia de recepción",
+        "operationId": "subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioItemFotoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Listar fotos de un ítem",
+        "operationId": "listar_fotos_endpoint_api_v1_inventario_items__item_id__fotos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventarioItemFotoOut"
+                  },
+                  "title": "Response Listar Fotos Endpoint Api V1 Inventario Items  Item Id  Fotos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/items/{item_id}/fotos/{foto_id}": {
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Ver foto de evidencia",
+        "operationId": "obtener_foto_endpoint_api_v1_inventario_items__item_id__fotos__foto_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "foto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Foto Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/inventario/convivientes": {
       "post": {
         "tags": [
@@ -3610,6 +3832,228 @@
                     "$ref": "#/components/schemas/AlimentoItemOut"
                   },
                   "title": "Response Listar Alimentos Endpoint Api V1 Alimentos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/checklist": {
+      "post": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Crear producto reutilizable",
+        "operationId": "crear_checklist_endpoint_api_v1_alimentos_checklist_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlimentoChecklistItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoChecklistItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Listar checklist de un hogar",
+        "operationId": "listar_checklist_endpoint_api_v1_alimentos_checklist_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hogar_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Hogar Id"
+            }
+          },
+          {
+            "name": "incluir_inactivos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Incluir Inactivos"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlimentoChecklistItemOut"
+                  },
+                  "title": "Response Listar Checklist Endpoint Api V1 Alimentos Checklist Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/checklist/{checklist_item_id}": {
+      "put": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Actualizar producto del checklist",
+        "operationId": "actualizar_checklist_endpoint_api_v1_alimentos_checklist__checklist_item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checklist_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Checklist Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlimentoChecklistItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoChecklistItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alimentos/checklist/{checklist_item_id}/comprar": {
+      "post": {
+        "tags": [
+          "Control de Alimentos"
+        ],
+        "summary": "Comprar de nuevo un producto del checklist",
+        "operationId": "comprar_de_checklist_endpoint_api_v1_alimentos_checklist__checklist_item_id__comprar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checklist_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Checklist Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlimentoChecklistComprar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoItemOut"
                 }
               }
             }
@@ -6189,6 +6633,188 @@
         ],
         "title": "AlertaOut"
       },
+      "AlimentoChecklistComprar": {
+        "properties": {
+          "fecha_ingreso": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Ingreso"
+          },
+          "fecha_vencimiento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Vencimiento"
+          },
+          "cantidad": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Cantidad"
+          },
+          "unidad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fecha_ingreso",
+          "cantidad"
+        ],
+        "title": "AlimentoChecklistComprar"
+      },
+      "AlimentoChecklistItemCreate": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Descripcion"
+          },
+          "perecedero": {
+            "type": "boolean",
+            "title": "Perecedero",
+            "default": true
+          },
+          "unidad_por_defecto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Por Defecto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "descripcion"
+        ],
+        "title": "AlimentoChecklistItemCreate"
+      },
+      "AlimentoChecklistItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "perecedero": {
+            "type": "boolean",
+            "title": "Perecedero"
+          },
+          "unidad_por_defecto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Por Defecto"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "creado_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Creado Por"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "hogar_id",
+          "descripcion",
+          "perecedero",
+          "activo",
+          "creado_por",
+          "creado_en"
+        ],
+        "title": "AlimentoChecklistItemOut"
+      },
+      "AlimentoChecklistItemUpdate": {
+        "properties": {
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "unidad_por_defecto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidad Por Defecto"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "AlimentoChecklistItemUpdate"
+      },
       "AlimentoItemCreate": {
         "properties": {
           "hogar_id": {
@@ -6311,6 +6937,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Registrado Por"
+          },
+          "checklist_item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checklist Item Id"
           },
           "created_at": {
             "type": "string",
@@ -6872,6 +7510,20 @@
           "archivo"
         ],
         "title": "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
+      },
+      "Body_subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo"
+        ],
+        "title": "Body_subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post"
       },
       "CatalogoOpcionAdminOut": {
         "properties": {
@@ -8697,6 +9349,48 @@
         ],
         "title": "InventarioItemCreate"
       },
+      "InventarioItemFotoOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Id"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "tamanio_bytes": {
+            "type": "integer",
+            "title": "Tamanio Bytes"
+          },
+          "subido_por": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subido Por"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "item_id",
+          "mime_type",
+          "tamanio_bytes",
+          "subido_por",
+          "creado_en"
+        ],
+        "title": "InventarioItemFotoOut"
+      },
       "InventarioItemOut": {
         "properties": {
           "id": {
@@ -8725,6 +9419,10 @@
             "type": "string",
             "title": "Estado"
           },
+          "recibido": {
+            "type": "boolean",
+            "title": "Recibido"
+          },
           "registrado_por": {
             "type": "string",
             "format": "uuid",
@@ -8749,6 +9447,7 @@
           "descripcion",
           "cantidad",
           "estado",
+          "recibido",
           "registrado_por",
           "created_at",
           "updated_at"
@@ -8757,6 +9456,18 @@
       },
       "InventarioItemUpdate": {
         "properties": {
+          "tipo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(cama|mueble|otro)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo"
+          },
           "descripcion": {
             "anyOf": [
               {
@@ -8797,6 +9508,20 @@
         },
         "type": "object",
         "title": "InventarioItemUpdate"
+      },
+      "InventarioRecepcionConfirmar": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "pattern": "^(bueno|regular|malo)$",
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado"
+        ],
+        "title": "InventarioRecepcionConfirmar"
       },
       "LoginRequest": {
         "properties": {
