@@ -14,6 +14,7 @@ MODULOS = [
     "alimentos",
     "citas",
     "alertas",
+    "configuracion",
     "reportes",
     "ia",
     "auditoria",

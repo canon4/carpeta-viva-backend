@@ -22,8 +22,8 @@ def test_cada_modulo_responde_estado(client, router):
     assert "modulo" in r.json()
 
 
-def test_hay_15_modulos():
-    assert len(MODULOS) == 15
+def test_hay_16_modulos():
+    assert len(MODULOS) == 16
 
 
 def test_contrato_openapi_esta_actualizado():

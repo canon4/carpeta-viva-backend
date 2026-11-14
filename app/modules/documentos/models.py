@@ -7,17 +7,16 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, Timestamps, UuidPk
 
-CATEGORIAS = (
-    "identidad", "salud", "psicosocial", "educacion",
-    "familia_red_apoyo", "actas_traslados", "madre_habilitacion", "otros",
-)
 ESTADOS_FLUJO = ("borrador", "en_revision", "aprobado", "devuelto")
 
 
 class Documento(UuidPk, Timestamps, Base):
     __tablename__ = "documentos"
     __table_args__ = (
-        CheckConstraint("categoria IN (" + ", ".join(f"'{c}'" for c in CATEGORIAS) + ")", name="ck_documentos_categoria"),
+        # Sin CheckConstraint para `categoria` desde ADR-0013: el conjunto de valores válidos ya
+        # no es fijo en código (`admin` agrega categorías nuevas en `catalogos_opciones` sin
+        # redespliegue); la validación vive en `documentos.application.crear_documento` contra
+        # `configuracion.application.valor_valido_en_catalogo`.
         CheckConstraint(
             "estado_flujo IN (" + ", ".join(f"'{e}'" for e in ESTADOS_FLUJO) + ")", name="ck_documentos_estado_flujo"
         ),

@@ -20,7 +20,7 @@ from app.core.config import get_settings
 from app.core.errors import no_encontrado, prohibido
 from app.modules.auth.domain import Rol
 
-from .domain import CATEGORIAS_HOGAR, es_visualizable, seccion_de_categoria, seccion_de_tipo_reporte
+from .domain import es_visualizable, seccion_de_categoria, seccion_de_tipo_reporte
 from .models import Documento, DocumentoVersion, Reporte
 from .repository import DocumentoRepository, DocumentoVersionRepository, ReporteRepository
 from .schemas import ReporteCreate
@@ -106,7 +106,7 @@ def _puede_ver_documento(session: Session, usuario, documento: Documento) -> boo
 
     from app.modules.menores.application import puede_ver_menor, tiene_permiso_seccion
 
-    seccion = seccion_de_categoria(documento.categoria)
+    seccion = seccion_de_categoria(session, documento.categoria)
     if seccion is None:
         return puede_ver_menor(session, usuario, documento.menor_id)
     return tiene_permiso_seccion(session, usuario, documento.menor_id, seccion)
@@ -139,7 +139,7 @@ def _resolver_creacion_menor(session: Session, usuario, menor_id: uuid.UUID, cat
     if rol == Rol.MADRE.value:
         if not puede_ver_menor(session, usuario, menor_id):
             return None
-        seccion = seccion_de_categoria(categoria)
+        seccion = seccion_de_categoria(session, categoria)
         if seccion is not None and not tiene_permiso_seccion(session, usuario, menor_id, seccion):
             return None
         return "borrador"
@@ -148,9 +148,10 @@ def _resolver_creacion_menor(session: Session, usuario, menor_id: uuid.UUID, cat
 
 
 def _resolver_creacion_hogar(session: Session, usuario, hogar_id: uuid.UUID, categoria: str) -> str | None:
+    from app.modules.configuracion.application import valor_valido_en_catalogo
     from app.modules.zonas_hogares.application import obtener_hogar
 
-    if categoria not in CATEGORIAS_HOGAR:
+    if not valor_valido_en_catalogo(session, "categoria_documento_hogar", categoria):
         return None
     rol = usuario.rol
     if rol == Rol.ADMIN.value:
@@ -224,6 +225,12 @@ def crear_documento(
         )
         raise prohibido("El expediente está archivado; no se pueden crear documentos nuevos")
 
+    from app.modules.configuracion.application import valor_valido_en_catalogo
+
+    grupo_categoria = "categoria_documento_menor" if menor_id is not None else "categoria_documento_hogar"
+    if not valor_valido_en_catalogo(session, grupo_categoria, categoria):
+        raise ValueError(f"Categoría desconocida: {categoria}")
+
     if menor_id is not None:
         estado_inicial = _resolver_creacion_menor(session, usuario, menor_id, categoria, migracion)
     else:
@@ -244,7 +251,7 @@ def crear_documento(
         titulo=titulo,
         estado_flujo=estado_inicial,
         version=1,
-        sensible=seccion_de_categoria(categoria) is not None,
+        sensible=seccion_de_categoria(session, categoria) is not None,
         creado_por=usuario.id,
         nombre_original=nombre_original,
         mime_type=mime_type,

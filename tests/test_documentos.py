@@ -403,3 +403,49 @@ def test_endpoint_agregador_por_seccion(client, session_factory):
     h_otra_madre = {"Authorization": f"Bearer {login(client, 'madre_sec_ajena@prueba.local')}"}
     r = client.get(f"/api/v1/documentos/menor/{menor_id}/seccion/salud", headers=h_otra_madre)
     assert r.status_code == 403
+
+
+def test_categoria_desconocida_es_422(client, session_factory):
+    """ADR-0013: la categoría se valida contra el catálogo administrable
+    (`configuracion_documento_menor`), no contra una lista fija; un valor que no esté en el
+    catálogo se rechaza igual que antes, ahora con el mensaje de categoría desconocida."""
+    h_admin = auth_header(client, session_factory, "admin_doc_cat@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "no_existe_esta_categoria", "titulo": "X", "migracion": "true", "motivo": "m"},
+        files=archivo(),
+        headers=h_admin,
+    )
+    assert r.status_code == 422
+
+
+def test_admin_agrega_categoria_nueva_y_madre_puede_usarla(client, session_factory):
+    """La categoría creada por `admin` en el catálogo queda disponible de inmediato para crear
+    documentos, sin redespliegue (ADR-0013)."""
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory)
+    h_admin = auth_header(client, session_factory, "admin_doc_cat2@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+
+    r = client.post(
+        "/api/v1/configuracion/catalogos/categoria_documento_menor",
+        json={"valor": "categoria_admin_nueva", "etiqueta": "Categoría nueva", "seccion_acceso": None},
+        headers=h_admin,
+    )
+    assert r.status_code == 201
+
+    uid_madre = crear_usuario(session_factory, "madre_doc_cat@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "900-cat")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_doc_cat@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "categoria_admin_nueva", "titulo": "Doc nuevo"},
+        files=archivo(),
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    assert r.json()["sensible"] is False

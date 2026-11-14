@@ -4246,76 +4246,6 @@
         ]
       }
     },
-    "/api/v1/alertas/configuracion/telefono-policia-infancia": {
-      "get": {
-        "tags": [
-          "Alertas y Evasiones"
-        ],
-        "summary": "Consultar teléfono de la Policía de Infancia y Adolescencia (admin)",
-        "operationId": "obtener_telefono_policia_infancia_endpoint_api_v1_alertas_configuracion_telefono_policia_infancia_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TelefonoPoliciaInfanciaOut"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "Alertas y Evasiones"
-        ],
-        "summary": "Cambiar el teléfono de la Policía de Infancia y Adolescencia (admin)",
-        "operationId": "actualizar_telefono_policia_infancia_endpoint_api_v1_alertas_configuracion_telefono_policia_infancia_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TelefonoPoliciaInfanciaUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TelefonoPoliciaInfanciaOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/alertas": {
       "get": {
         "tags": [
@@ -4553,6 +4483,446 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/configuracion/_estado": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Estado del módulo",
+        "operationId": "estado_api_v1_configuracion__estado_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Estado Api V1 Configuracion  Estado Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/catalogos": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Listar grupos de catálogo (admin)",
+        "operationId": "listar_grupos_catalogo_endpoint_api_v1_configuracion_catalogos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoCatalogoOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Grupos Catalogo Endpoint Api V1 Configuracion Catalogos Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracion/catalogos/{grupo}": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Listar opciones activas de un catálogo (cualquier autenticado)",
+        "operationId": "listar_catalogo_publico_endpoint_api_v1_configuracion_catalogos__grupo__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Grupo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogoOpcionOut"
+                  },
+                  "title": "Response Listar Catalogo Publico Endpoint Api V1 Configuracion Catalogos  Grupo  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Crear opción de catálogo (admin)",
+        "operationId": "crear_opcion_catalogo_endpoint_api_v1_configuracion_catalogos__grupo__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Grupo"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogoOpcionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoOpcionAdminOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/catalogos/{grupo}/admin": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Listar opciones de un catálogo, incluidas inactivas (admin)",
+        "operationId": "listar_catalogo_admin_endpoint_api_v1_configuracion_catalogos__grupo__admin_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Grupo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogoOpcionAdminOut"
+                  },
+                  "title": "Response Listar Catalogo Admin Endpoint Api V1 Configuracion Catalogos  Grupo  Admin Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/catalogos/{grupo}/{valor}": {
+      "put": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Editar o desactivar opción de catálogo (admin)",
+        "operationId": "actualizar_opcion_catalogo_endpoint_api_v1_configuracion_catalogos__grupo___valor__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "grupo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Grupo"
+            }
+          },
+          {
+            "name": "valor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Valor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogoOpcionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoOpcionAdminOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/parametros": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Listar parámetros (admin)",
+        "operationId": "listar_parametros_endpoint_api_v1_configuracion_parametros_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ParametroOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Parametros Endpoint Api V1 Configuracion Parametros Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/configuracion/parametros/{clave}": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Detalle de un parámetro (admin)",
+        "operationId": "obtener_parametro_endpoint_api_v1_configuracion_parametros__clave__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clave",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Clave"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParametroOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Actualizar un parámetro (admin)",
+        "operationId": "actualizar_parametro_endpoint_api_v1_configuracion_parametros__clave__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clave",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Clave"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParametroUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParametroOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/configuracion/publica": {
+      "get": {
+        "tags": [
+          "Configuración administrable"
+        ],
+        "summary": "Parámetros públicos (cualquier autenticado)",
+        "operationId": "listar_parametros_publicos_endpoint_api_v1_configuracion_publica_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ParametroPublicoOut"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Parametros Publicos Endpoint Api V1 Configuracion Publica Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/reportes/_estado": {
@@ -6503,6 +6873,189 @@
         ],
         "title": "Body_crear_version_endpoint_api_v1_documentos__documento_id__version_post"
       },
+      "CatalogoOpcionAdminOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "grupo": {
+            "type": "string",
+            "title": "Grupo"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "orden": {
+            "type": "integer",
+            "title": "Orden"
+          },
+          "activo": {
+            "type": "boolean",
+            "title": "Activo"
+          },
+          "seccion_acceso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seccion Acceso"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          },
+          "actualizado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualizado En"
+          },
+          "actualizado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualizado Por"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "grupo",
+          "valor",
+          "etiqueta",
+          "orden",
+          "activo",
+          "creado_en"
+        ],
+        "title": "CatalogoOpcionAdminOut"
+      },
+      "CatalogoOpcionCreate": {
+        "properties": {
+          "valor": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Valor"
+          },
+          "etiqueta": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Etiqueta"
+          },
+          "orden": {
+            "type": "integer",
+            "title": "Orden",
+            "default": 0
+          },
+          "seccion_acceso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seccion Acceso"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor",
+          "etiqueta"
+        ],
+        "title": "CatalogoOpcionCreate"
+      },
+      "CatalogoOpcionOut": {
+        "properties": {
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "orden": {
+            "type": "integer",
+            "title": "Orden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor",
+          "etiqueta",
+          "orden"
+        ],
+        "title": "CatalogoOpcionOut",
+        "description": "Lectura pública (cualquier autenticado): solo lo que necesita un formulario."
+      },
+      "CatalogoOpcionUpdate": {
+        "properties": {
+          "etiqueta": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Etiqueta"
+          },
+          "orden": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orden"
+          },
+          "activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activo"
+          }
+        },
+        "type": "object",
+        "title": "CatalogoOpcionUpdate"
+      },
       "CerrarExpedienteRequest": {
         "properties": {
           "motivo": {
@@ -7856,6 +8409,39 @@
         ],
         "title": "FirmaUpdate"
       },
+      "GrupoCatalogoOut": {
+        "properties": {
+          "grupo": {
+            "type": "string",
+            "title": "Grupo"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "con_seccion_acceso": {
+            "type": "boolean",
+            "title": "Con Seccion Acceso"
+          },
+          "total_opciones_activas": {
+            "type": "integer",
+            "title": "Total Opciones Activas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grupo",
+          "etiqueta",
+          "descripcion",
+          "con_seccion_acceso",
+          "total_opciones_activas"
+        ],
+        "title": "GrupoCatalogoOut"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -8772,6 +9358,98 @@
         },
         "type": "object",
         "title": "MenorUpdate"
+      },
+      "ParametroOut": {
+        "properties": {
+          "clave": {
+            "type": "string",
+            "title": "Clave"
+          },
+          "etiqueta": {
+            "type": "string",
+            "title": "Etiqueta"
+          },
+          "descripcion": {
+            "type": "string",
+            "title": "Descripcion"
+          },
+          "tipo": {
+            "type": "string",
+            "title": "Tipo"
+          },
+          "grupo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grupo"
+          },
+          "publico": {
+            "type": "boolean",
+            "title": "Publico"
+          },
+          "valor_actual": {
+            "type": "string",
+            "title": "Valor Actual"
+          },
+          "valor_por_defecto": {
+            "type": "string",
+            "title": "Valor Por Defecto"
+          },
+          "editado_por_admin": {
+            "type": "boolean",
+            "title": "Editado Por Admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clave",
+          "etiqueta",
+          "descripcion",
+          "tipo",
+          "publico",
+          "valor_actual",
+          "valor_por_defecto",
+          "editado_por_admin"
+        ],
+        "title": "ParametroOut"
+      },
+      "ParametroPublicoOut": {
+        "properties": {
+          "clave": {
+            "type": "string",
+            "title": "Clave"
+          },
+          "valor": {
+            "type": "string",
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clave",
+          "valor"
+        ],
+        "title": "ParametroPublicoOut"
+      },
+      "ParametroUpdate": {
+        "properties": {
+          "valor": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 0,
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "valor"
+        ],
+        "title": "ParametroUpdate"
       },
       "Parentesco": {
         "type": "string",
@@ -9784,39 +10462,6 @@
           "psicosocial"
         ],
         "title": "SeccionSensible"
-      },
-      "TelefonoPoliciaInfanciaOut": {
-        "properties": {
-          "telefono": {
-            "type": "string",
-            "title": "Telefono"
-          },
-          "editado_por_admin": {
-            "type": "boolean",
-            "title": "Editado Por Admin"
-          }
-        },
-        "type": "object",
-        "required": [
-          "telefono",
-          "editado_por_admin"
-        ],
-        "title": "TelefonoPoliciaInfanciaOut"
-      },
-      "TelefonoPoliciaInfanciaUpdate": {
-        "properties": {
-          "telefono": {
-            "type": "string",
-            "maxLength": 60,
-            "minLength": 1,
-            "title": "Telefono"
-          }
-        },
-        "type": "object",
-        "required": [
-          "telefono"
-        ],
-        "title": "TelefonoPoliciaInfanciaUpdate"
       },
       "TipoDocumento": {
         "type": "string",

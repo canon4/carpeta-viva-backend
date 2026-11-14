@@ -4,28 +4,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Alerta, AlertaDestinatario, ConfiguracionAlertas
-
-
-class ConfiguracionAlertasRepository:
-    """Fila única (id=1). La migración 0008 la deja sembrada en Postgres; se crea sola aquí si
-    falta (p. ej. en pruebas, que arman el esquema con `Base.metadata.create_all` y nunca
-    corren las migraciones) para que un `admin` nunca se tope con un error por esto."""
-
-    def __init__(self, session: Session):
-        self.session = session
-
-    def obtener(self) -> ConfiguracionAlertas:
-        configuracion = self.session.get(ConfiguracionAlertas, 1)
-        if configuracion is None:
-            configuracion = ConfiguracionAlertas(id=1, telefono_policia_infancia=None)
-            self.session.add(configuracion)
-            self.session.commit()
-        return configuracion
-
-    def guardar(self, configuracion: ConfiguracionAlertas) -> ConfiguracionAlertas:
-        self.session.commit()
-        return configuracion
+from .models import Alerta, AlertaDestinatario
 
 
 class AlertaRepository:

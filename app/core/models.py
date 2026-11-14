@@ -6,6 +6,7 @@ from app.modules.asignaciones.models import Asignacion, AsignacionHistory  # noq
 from app.modules.auditoria.models import AuditoriaAcceso  # noqa: F401
 from app.modules.auth.models import Usuario  # noqa: F401
 from app.modules.citas.models import Cita  # noqa: F401
+from app.modules.configuracion.models import CatalogoOpcion, ConfiguracionParametro  # noqa: F401
 from app.modules.documentos.models import Documento, DocumentoVersion, Reporte  # noqa: F401
 from app.modules.ia.models import FragmentoDocumento, IaConsulta  # noqa: F401
 from app.modules.inventario.models import HogarConviviente, HogarRedApoyo, InventarioItem  # noqa: F401

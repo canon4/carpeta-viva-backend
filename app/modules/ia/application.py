@@ -549,7 +549,7 @@ def indexar_fragmentos(
             return []
         contenido = almacenamiento.leer(documento.referencia_archivo, documento.hash_sha256)
         texto = ocr.extraer_texto(contenido, documento.mime_type)
-        seccion = seccion_de_categoria(documento.categoria)
+        seccion = seccion_de_categoria(session, documento.categoria)
         menor_id, hogar_id, version = documento.menor_id, documento.hogar_id, documento.version
     else:
         import json

@@ -26,6 +26,11 @@ SECCION_POR_TIPO_REPORTE: dict[str, str | None] = {
     "seguimiento": None,
 }
 
+# Respaldo histórico (ADR-0013, sección 7.1): estas dos constantes dejaron de ser la fuente de
+# verdad de qué categorías existen. `configuracion.application.valor_valido_en_catalogo` contra
+# los grupos "categoria_documento_menor"/"categoria_documento_hogar" es la validación vigente;
+# admin puede agregar categorías nuevas sin tocar este archivo. Se dejan aquí como referencia de
+# los valores migrados en la primera semilla, no se usan en la validación.
 CATEGORIAS_MENOR = {
     "identidad", "salud", "psicosocial", "educacion", "familia_red_apoyo", "actas_traslados", "otros",
 }
@@ -38,8 +43,16 @@ ESTADOS_FLUJO = ("borrador", "en_revision", "aprobado", "devuelto")
 MIME_VISUALIZABLES = {"application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
-def seccion_de_categoria(categoria: str) -> str | None:
-    return SECCION_POR_CATEGORIA.get(categoria)
+def seccion_de_categoria(session, categoria: str) -> str | None:
+    """Primero el respaldo fijo en código (categorías ya existentes); si la categoría no está
+    ahí (creada por `admin` después de este ADR), consulta el catálogo administrable
+    (ADR-0013, sección 5.1). `None`/básica solo como backstop defensivo, nunca como mecanismo
+    principal para una categoría nueva sin mapear."""
+    if categoria in SECCION_POR_CATEGORIA:
+        return SECCION_POR_CATEGORIA[categoria]
+    from app.modules.configuracion.application import seccion_acceso_de_opcion
+
+    return seccion_acceso_de_opcion(session, "categoria_documento_menor", categoria)
 
 
 def seccion_de_tipo_reporte(tipo_reporte: str) -> str | None:

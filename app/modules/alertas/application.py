@@ -11,58 +11,22 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.core.audit import registrar_acceso
-from app.core.config import get_settings
 from app.core.errors import no_encontrado, prohibido
 from app.modules.auth.domain import Rol
 
 from .domain import ROLES_DESTINATARIOS_EVASION
 from .models import Alerta, AlertaDestinatario
-from .repository import AlertaDestinatarioRepository, AlertaRepository, ConfiguracionAlertasRepository
-from .schemas import (
-    ContactoEmergencia,
-    ContactosEmergenciaOut,
-    EvasionCreate,
-    TelefonoPoliciaInfanciaOut,
-)
+from .repository import AlertaDestinatarioRepository, AlertaRepository
+from .schemas import ContactoEmergencia, ContactosEmergenciaOut, EvasionCreate
 
-
-# ---------------------------------------------------------------------------
-# Configuración editable por admin (migración 0008)
-# ---------------------------------------------------------------------------
 
 def _telefono_policia_infancia(session: Session) -> str:
-    """Valor en uso ahora mismo: el editado por `admin` si existe, si no el de
-    `POLICIA_INFANCIA_TELEFONO` (entorno)."""
-    configuracion = ConfiguracionAlertasRepository(session).obtener()
-    return configuracion.telefono_policia_infancia or get_settings().policia_infancia_telefono
+    """Valor en uso ahora mismo: parámetro `telefono_policia_infancia` administrado por el
+    módulo transversal `configuracion` (ADR-0013), que ya resuelve el respaldo por defecto si
+    nadie lo ha editado. Retira el patrón propio de `ConfiguracionAlertas` (ADR-0009)."""
+    from app.modules.configuracion.application import obtener_parametro
 
-
-def obtener_telefono_policia_infancia(session: Session, usuario) -> TelefonoPoliciaInfanciaOut:
-    """`GET /alertas/configuracion/telefono-policia-infancia` (admin, sección "Configuración
-    editable"): consulta del valor vigente y de dónde sale, para la pantalla de administración."""
-    if usuario.rol != Rol.ADMIN.value:
-        registrar_acceso(session, accion="configuracion_alertas_consulta_denegada", usuario_id=usuario.id)
-        raise prohibido()
-    configuracion = ConfiguracionAlertasRepository(session).obtener()
-    if configuracion.telefono_policia_infancia:
-        return TelefonoPoliciaInfanciaOut(telefono=configuracion.telefono_policia_infancia, editado_por_admin=True)
-    return TelefonoPoliciaInfanciaOut(telefono=get_settings().policia_infancia_telefono, editado_por_admin=False)
-
-
-def actualizar_telefono_policia_infancia(session: Session, usuario, telefono: str) -> TelefonoPoliciaInfanciaOut:
-    """`PUT /alertas/configuracion/telefono-policia-infancia`: solo `admin`, sin redespliegue
-    (a diferencia de la variable de entorno que reemplaza, ver migración 0008)."""
-    if usuario.rol != Rol.ADMIN.value:
-        registrar_acceso(session, accion="configuracion_alertas_edicion_denegada", usuario_id=usuario.id)
-        raise prohibido()
-    repo = ConfiguracionAlertasRepository(session)
-    configuracion = repo.obtener()
-    configuracion.telefono_policia_infancia = telefono.strip()
-    configuracion.actualizado_en = datetime.now(timezone.utc)
-    configuracion.actualizado_por = usuario.id
-    repo.guardar(configuracion)
-    registrar_acceso(session, accion="configuracion_alertas_telefono_policia_actualizado", usuario_id=usuario.id)
-    return TelefonoPoliciaInfanciaOut(telefono=configuracion.telefono_policia_infancia, editado_por_admin=True)
+    return obtener_parametro(session, "telefono_policia_infancia")
 
 
 # ---------------------------------------------------------------------------
