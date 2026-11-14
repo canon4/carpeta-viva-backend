@@ -141,7 +141,13 @@ def confirmar_recepcion_item(session: Session, usuario, item_id: uuid.UUID, esta
 # ---------------------------------------------------------------------------
 
 def subir_foto_item(
-    session: Session, usuario, item_id: uuid.UUID, contenido: bytes, mime_type: str, nombre_archivo: str
+    session: Session,
+    usuario,
+    item_id: uuid.UUID,
+    contenido: bytes,
+    mime_type: str,
+    nombre_archivo: str,
+    declaracion_sin_menores: bool,
 ) -> InventarioItemFoto:
     item = _item_o_404(session, item_id)
     if not puede_gestionar_hogar(session, usuario, item.hogar_id):
@@ -150,6 +156,10 @@ def subir_foto_item(
     if usuario.rol not in (Rol.MADRE.value, Rol.ADMIN.value):
         registrar_acceso(session, accion="inventario_foto_subida_denegada", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
+    # ADR-0014, sección 2.1 (revisión de `seguridad`): la declaración de que la foto no muestra a
+    # ningún NNA es obligatoria en cada subida, no un aviso de interfaz que se pueda ignorar.
+    if not declaracion_sin_menores:
+        raise ValueError("Debe declarar que la foto no muestra a ningún NNA para poder subirla")
     if mime_type not in MIME_FOTOS_PERMITIDOS:
         raise ValueError("Tipo de imagen no permitido; use JPEG, PNG o WEBP")
     if len(contenido) == 0:
@@ -168,10 +178,18 @@ def subir_foto_item(
         mime_type=mime_type,
         tamanio_bytes=len(contenido),
         subido_por=usuario.id,
+        declaracion_sin_menores=True,
     )
     foto = InventarioItemFotoRepository(session).crear(foto)
     registrar_acceso(session, accion="inventario_foto_subida", usuario_id=usuario.id, recurso=str(foto.id))
     return foto
+
+
+def _puede_ver_fotos(usuario) -> bool:
+    """ADR-0014, sección 2.1 (revisión de `seguridad`): leer fotos de inventario exige rol
+    madre/admin/auditor, no todo `puede_ver_hogar` (que también incluye a cualquier profesional o
+    defensor con algún menor asignado al hogar, sin relación con lo que aparezca en la foto)."""
+    return usuario.rol in (Rol.MADRE.value, Rol.ADMIN.value, Rol.AUDITOR.value)
 
 
 def listar_fotos_item(session: Session, usuario, item_id: uuid.UUID) -> list[InventarioItemFoto]:
@@ -179,7 +197,12 @@ def listar_fotos_item(session: Session, usuario, item_id: uuid.UUID) -> list[Inv
     if not puede_ver_hogar(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="inventario_fotos_listado_denegado", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
+    if not _puede_ver_fotos(usuario):
+        registrar_acceso(session, accion="inventario_fotos_listado_denegado", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
     resultado = InventarioItemFotoRepository(session).listar(item_id)
+    if usuario.rol != Rol.ADMIN.value:
+        resultado = [foto for foto in resultado if not foto.oculta]
     registrar_acceso(session, accion="inventario_fotos_listadas", usuario_id=usuario.id, recurso=str(item.id))
     return resultado
 
@@ -189,12 +212,33 @@ def obtener_foto_item(session: Session, usuario, item_id: uuid.UUID, foto_id: uu
     if not puede_ver_hogar(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="inventario_foto_consulta_denegada", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
+    if not _puede_ver_fotos(usuario):
+        registrar_acceso(session, accion="inventario_foto_consulta_denegada", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
     foto = InventarioItemFotoRepository(session).por_id(foto_id)
     if foto is None or foto.item_id != item_id:
+        raise no_encontrado("Foto no encontrada")
+    if foto.oculta and usuario.rol != Rol.ADMIN.value:
         raise no_encontrado("Foto no encontrada")
     contenido = almacenamiento.leer(foto.referencia_archivo)
     registrar_acceso(session, accion="inventario_foto_consultada", usuario_id=usuario.id, recurso=str(foto.id))
     return foto, contenido
+
+
+def ocultar_foto_item(session: Session, usuario, item_id: uuid.UUID, foto_id: uuid.UUID) -> InventarioItemFoto:
+    """ADR-0014, sección 2.1: remediación admin-only para una foto subida por error que termine
+    mostrando a un NNA. Nunca se borra físico, se oculta (mismo criterio que RF7)."""
+    item = _item_o_404(session, item_id)
+    if usuario.rol != Rol.ADMIN.value:
+        registrar_acceso(session, accion="inventario_foto_ocultar_denegado", usuario_id=usuario.id, recurso=str(item.id))
+        raise prohibido()
+    foto = InventarioItemFotoRepository(session).por_id(foto_id)
+    if foto is None or foto.item_id != item_id:
+        raise no_encontrado("Foto no encontrada")
+    foto.oculta = True
+    foto = InventarioItemFotoRepository(session).guardar(foto)
+    registrar_acceso(session, accion="inventario_foto_ocultada", usuario_id=usuario.id, recurso=str(foto.id))
+    return foto
 
 
 # ---------------------------------------------------------------------------

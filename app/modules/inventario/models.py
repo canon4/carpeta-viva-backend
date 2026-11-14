@@ -45,7 +45,13 @@ class InventarioItem(UuidPk, Timestamps, Base):
 
 class InventarioItemFoto(UuidPk, Base):
     """Evidencia fotográfica de la recepción de un ítem (ADR-0014, sección 2). Sin versionado:
-    una foto subida por error se queda, no se reemplaza ni se borra."""
+    una foto subida por error se queda, no se reemplaza ni se borra físico.
+
+    ADR-0014, sección 2.1 (revisión de `seguridad`): `declaracion_sin_menores` registra, por cada
+    subida, que quien la hizo declaró que la foto no muestra a ningún NNA (mitigación de UI,
+    auditable). `oculta` es el mecanismo de remediación admin-only si de todas formas una foto
+    termina mostrando a un NNA sin querer: nunca se borra, se oculta (igual criterio que RF7).
+    """
 
     __tablename__ = "inventario_item_fotos"
 
@@ -55,6 +61,8 @@ class InventarioItemFoto(UuidPk, Base):
     tamanio_bytes: Mapped[int] = mapped_column(Integer)
     subido_por: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("usuarios.id"))
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    declaracion_sin_menores: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    oculta: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
 
 class HogarConviviente(UuidPk, Timestamps, Base):

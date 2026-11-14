@@ -10,7 +10,10 @@ agrega un checklist reutilizable para Control de Alimentos.
 - `inventario_items.recibido`: ítems existentes se migran con `recibido=true` (se asume que ya
   estaban físicamente en el hogar, sección 3 del ADR).
 - `inventario_item_fotos`: evidencia fotográfica de la recepción, cifrada igual que `documentos`
-  (ADR-0008); sin versionado.
+  (ADR-0008); sin versionado. Incluye `declaracion_sin_menores` (obligatoria, auditable) y
+  `oculta` (remediación admin-only), incorporadas en la revisión de `seguridad` de la sección 2.1
+  del ADR antes de que esta migración se desplegara en ningún entorno real; por eso se agregan
+  aquí mismo en vez de en una migración `0011` aparte.
 - `alimentos_checklist_items`: el "producto del mercado" reutilizable.
 - `alimentos_items.checklist_item_id`: nullable, apunta al producto del checklist si la compra
   viene de ahí.
@@ -43,6 +46,8 @@ def upgrade() -> None:
         sa.Column("tamanio_bytes", sa.Integer(), nullable=False),
         sa.Column("subido_por", sa.Uuid(), nullable=False),
         sa.Column("creado_en", sa.DateTime(timezone=True), server_default=sa.text("(CURRENT_TIMESTAMP)"), nullable=False),
+        sa.Column("declaracion_sin_menores", sa.Boolean(), server_default=sa.true(), nullable=False),
+        sa.Column("oculta", sa.Boolean(), server_default=sa.false(), nullable=False),
         sa.ForeignKeyConstraint(["item_id"], ["inventario_items.id"]),
         sa.ForeignKeyConstraint(["subido_por"], ["usuarios.id"]),
         sa.PrimaryKeyConstraint("id"),

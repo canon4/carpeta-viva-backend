@@ -52,6 +52,10 @@ class InventarioItemFotoRepository:
     def contar(self, item_id: uuid.UUID) -> int:
         return len(self.listar(item_id))
 
+    def guardar(self, foto: InventarioItemFoto) -> InventarioItemFoto:
+        self.session.commit()
+        return foto
+
 
 class HogarConvivienteRepository:
     def __init__(self, session: Session):

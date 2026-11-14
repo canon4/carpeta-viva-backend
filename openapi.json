@@ -3372,6 +3372,64 @@
         }
       }
     },
+    "/api/v1/inventario/items/{item_id}/fotos/{foto_id}/ocultar": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Ocultar foto de evidencia (solo admin, remediación)",
+        "operationId": "ocultar_foto_endpoint_api_v1_inventario_items__item_id__fotos__foto_id__ocultar_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "foto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Foto Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioItemFotoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/inventario/convivientes": {
       "post": {
         "tags": [
@@ -7517,11 +7575,16 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "Archivo"
+          },
+          "declaracion_sin_menores": {
+            "type": "boolean",
+            "title": "Declaracion Sin Menores"
           }
         },
         "type": "object",
         "required": [
-          "archivo"
+          "archivo",
+          "declaracion_sin_menores"
         ],
         "title": "Body_subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post"
       },
@@ -9378,6 +9441,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Creado En"
+          },
+          "declaracion_sin_menores": {
+            "type": "boolean",
+            "title": "Declaracion Sin Menores"
+          },
+          "oculta": {
+            "type": "boolean",
+            "title": "Oculta"
           }
         },
         "type": "object",
@@ -9387,7 +9458,9 @@
           "mime_type",
           "tamanio_bytes",
           "subido_por",
-          "creado_en"
+          "creado_en",
+          "declaracion_sin_menores",
+          "oculta"
         ],
         "title": "InventarioItemFotoOut"
       },

@@ -59,6 +59,8 @@ class InventarioItemFotoOut(BaseModel):
     tamanio_bytes: int
     subido_por: uuid.UUID
     creado_en: datetime
+    declaracion_sin_menores: bool
+    oculta: bool
 
 
 # ---------------------------------------------------------------------------

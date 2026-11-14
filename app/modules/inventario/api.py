@@ -1,7 +1,7 @@
 import re
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,7 @@ from .application import (
     listar_items,
     listar_red_apoyo,
     obtener_foto_item,
+    ocultar_foto_item,
     subir_foto_item,
 )
 from .schemas import (
@@ -112,6 +113,7 @@ def confirmar_recepcion_endpoint(
 async def subir_foto_endpoint(
     item_id: uuid.UUID,
     archivo: UploadFile = File(...),
+    declaracion_sin_menores: bool = Form(...),
     session: Session = Depends(get_session),
     usuario: Usuario = Depends(usuario_actual),
 ) -> InventarioItemFotoOut:
@@ -124,6 +126,7 @@ async def subir_foto_endpoint(
             contenido,
             archivo.content_type or "application/octet-stream",
             archivo.filename or "foto",
+            declaracion_sin_menores,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
@@ -149,6 +152,20 @@ def obtener_foto_endpoint(
         media_type=foto.mime_type or "application/octet-stream",
         headers=_cabeceras_vista_foto(f"foto-{foto.id}"),
     )
+
+
+@router.put(
+    "/items/{item_id}/fotos/{foto_id}/ocultar",
+    response_model=InventarioItemFotoOut,
+    summary="Ocultar foto de evidencia (solo admin, remediación)",
+)
+def ocultar_foto_endpoint(
+    item_id: uuid.UUID,
+    foto_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> InventarioItemFotoOut:
+    return ocultar_foto_item(session, usuario, item_id, foto_id)
 
 
 # ---------------------------------------------------------------------------
