@@ -1,6 +1,8 @@
-"""Pruebas de Control de Alimentos (ADR-0009, sección 4): CRUD por hogar, autorización
-mediante `puede_ver_hogar`/`puede_gestionar_hogar`, filtro de vencidos y que "eliminar" solo
-marca `consumido` en vez de borrar físico.
+"""Pruebas de Control de Alimentos (ADR-0009, sección 4): CRUD por hogar, filtro de vencidos y
+que "eliminar" solo marca `consumido` en vez de borrar físico.
+
+ADR-0015: la escritura es exclusiva de madre/admin (`puede_ver_hogar` sigue rigiendo la lectura
+para coordinador/profesional/defensor/auditor).
 """
 from ._helpers import (
     asignar_profesional_a_menor,
@@ -186,7 +188,9 @@ def test_coordinador_de_otra_zona_no_lista(client, session_factory):
     assert r.status_code == 403
 
 
-def test_profesional_con_menor_en_el_hogar_puede_gestionar(client, session_factory):
+def test_defensor_con_menor_en_el_hogar_no_puede_gestionar_alimentos(client, session_factory):
+    """ADR-0015: ni siquiera el defensor asignado al menor del hogar puede escribir en
+    Alimentos; la escritura es exclusiva de madre/admin, el resto solo lee."""
     zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ali7")
     h_admin = auth_header(client, session_factory, "admin_ali7@prueba.local", "admin")
     menor_id = crear_menor(client, h_admin)
@@ -210,7 +214,35 @@ def test_profesional_con_menor_en_el_hogar_puede_gestionar(client, session_facto
         },
         headers=h_defensor,
     )
-    assert r.status_code == 201
+    assert r.status_code == 403
+
+    # Pero sigue viendo la lista completa del hogar (lectura, sin cambios).
+    r = client.get(f"/api/v1/alimentos?hogar_id={hogar_id}", headers=h_defensor)
+    assert r.status_code == 200
+
+
+def test_coordinador_no_puede_gestionar_alimentos(client, session_factory):
+    """ADR-0015: el coordinador deja de poder crear la lista de alimentos del hogar; solo
+    lista (lectura), que no cambia."""
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona ali10")
+    h_admin = auth_header(client, session_factory, "admin_ali10@prueba.local", "admin")
+    h_coord = auth_header(client, session_factory, "coord_ali10@prueba.local", "coordinador", zona_id=zona_id)
+
+    r = client.post(
+        "/api/v1/alimentos",
+        json={
+            "hogar_id": hogar_id,
+            "descripcion": "Avena",
+            "fecha_ingreso": "2026-01-01",
+            "perecedero": False,
+            "cantidad": 2,
+        },
+        headers=h_coord,
+    )
+    assert r.status_code == 403
+
+    r = client.get(f"/api/v1/alimentos?hogar_id={hogar_id}", headers=h_coord)
+    assert r.status_code == 200
 
 
 def test_profesional_sin_relacion_no_puede_gestionar(client, session_factory):

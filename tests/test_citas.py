@@ -1,5 +1,9 @@
 """Pruebas de Citas y Recordatorios (ADR-0009, sección 2): autorización por fila y el filtrado
-de `notas` por sección (corrección obligatoria de seguridad)."""
+de `notas` por sección (corrección obligatoria de seguridad).
+
+ADR-0015: la escritura depende del tipo de cita (madre para medica/psicosocial/otro, defensor
+para reunion_familia, admin siempre); coordinador y profesional pierden toda escritura y quedan
+solo con lectura (`_puede_ver`, sin cambios)."""
 from ._helpers import (
     asignar_profesional_a_menor,
     auth_header,
@@ -220,3 +224,169 @@ def test_reprogramar_cita(client, session_factory):
     )
     assert r.status_code == 200
     assert r.json()["lugar"] == "Consultorio 2"
+
+
+# ---------------------------------------------------------------------------
+# ADR-0015: escritura por tipo de cita, un solo rol dueño además de admin
+# ---------------------------------------------------------------------------
+
+def _madre_del_hogar(client, session_factory, hogar_id, email, numero_identificacion):
+    uid_madre = crear_usuario(session_factory, email, "madre")
+    madre_id = crear_madre(session_factory, uid_madre, numero_identificacion)
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    return {"Authorization": f"Bearer {login(client, email)}"}
+
+
+def _defensor_del_menor(client, session_factory, menor_id, email):
+    uid_defensor = crear_usuario(session_factory, email, "defensor")
+    profesional_id = crear_profesional(session_factory, uid_defensor, "defensor")
+    asignar_profesional_a_menor(session_factory, menor_id, profesional_id, "defensor")
+    return {"Authorization": f"Bearer {login(client, email)}"}
+
+
+def test_madre_crea_edita_y_cambia_estado_de_cita_medica(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c8")
+    h_admin = auth_header(client, session_factory, "admin_c8@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+    h_madre = _madre_del_hogar(client, session_factory, hogar_id, "madre_c8@prueba.local", "900-c8")
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "medica", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_madre,
+    )
+    assert r.status_code == 201
+    cita_id = r.json()["id"]
+
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Consultorio nuevo"}, headers=h_madre)
+    assert r.status_code == 200
+
+    r = client.put(f"/api/v1/citas/{cita_id}/estado", json={"estado": "cumplida"}, headers=h_madre)
+    assert r.status_code == 200
+
+
+def test_coordinador_y_profesional_no_pueden_escribir_citas(client, session_factory):
+    """ADR-0015: coordinador/profesional pierden toda escritura, cualquier tipo, pero siguen
+    leyendo lo que ya veían."""
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c9")
+    h_admin = auth_header(client, session_factory, "admin_c9@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "medica", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_admin,
+    )
+    cita_id = r.json()["id"]
+
+    h_coord = auth_header(client, session_factory, "coord_c9@prueba.local", "coordinador", zona_id=zona_id)
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "otro", "fecha_hora": "2026-06-02T09:00:00Z"},
+        headers=h_coord,
+    )
+    assert r.status_code == 403
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Otro lugar"}, headers=h_coord)
+    assert r.status_code == 403
+    r = client.put(f"/api/v1/citas/{cita_id}/estado", json={"estado": "cumplida"}, headers=h_coord)
+    assert r.status_code == 403
+    r = client.get(f"/api/v1/citas/{cita_id}", headers=h_coord)
+    assert r.status_code == 200
+
+    uid_psico = crear_usuario(session_factory, "psico_c9@prueba.local", "profesional")
+    profesional_id = crear_profesional(session_factory, uid_psico, "psicosocial")
+    asignar_profesional_a_menor(session_factory, menor_id, profesional_id, "psicosocial")
+    h_psico = {"Authorization": f"Bearer {login(client, 'psico_c9@prueba.local')}"}
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "psicosocial", "fecha_hora": "2026-06-02T09:00:00Z"},
+        headers=h_psico,
+    )
+    assert r.status_code == 403
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Otro lugar"}, headers=h_psico)
+    assert r.status_code == 403
+
+
+def test_defensor_crea_edita_y_cambia_estado_de_reunion_familia(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c10")
+    h_admin = auth_header(client, session_factory, "admin_c10@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+    h_defensor = _defensor_del_menor(client, session_factory, menor_id, "defensor_c10@prueba.local")
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_defensor,
+    )
+    assert r.status_code == 201
+    cita_id = r.json()["id"]
+
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Sede Fundar"}, headers=h_defensor)
+    assert r.status_code == 200
+
+    r = client.put(f"/api/v1/citas/{cita_id}/estado", json={"estado": "cumplida"}, headers=h_defensor)
+    assert r.status_code == 200
+
+
+def test_madre_no_puede_escribir_reunion_familia_pero_la_lee(client, session_factory):
+    """ADR-0015: la reunión con familia biológica es tarea del defensor; la madre solo la lee
+    (la notificación de la fecha le llega al verla en su listado)."""
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c11")
+    h_admin = auth_header(client, session_factory, "admin_c11@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+    h_madre = _madre_del_hogar(client, session_factory, hogar_id, "madre_c11@prueba.local", "900-c11")
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_madre,
+    )
+    assert r.status_code == 403
+
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_admin,
+    )
+    cita_id = r.json()["id"]
+
+    r = client.get(f"/api/v1/citas/{cita_id}", headers=h_madre)
+    assert r.status_code == 200
+    assert r.json()["tipo"] == "reunion_familia"
+
+    r = client.put(f"/api/v1/citas/{cita_id}", json={"lugar": "Otro lugar"}, headers=h_madre)
+    assert r.status_code == 403
+
+    r = client.put(f"/api/v1/citas/{cita_id}/estado", json={"estado": "cumplida"}, headers=h_madre)
+    assert r.status_code == 403
+
+
+def test_coordinador_y_profesional_no_pueden_escribir_reunion_familia(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory, "Zona c12")
+    h_admin = auth_header(client, session_factory, "admin_c12@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+
+    h_coord = auth_header(client, session_factory, "coord_c12@prueba.local", "coordinador", zona_id=zona_id)
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_coord,
+    )
+    assert r.status_code == 403
+
+    uid_psico = crear_usuario(session_factory, "psico_c12@prueba.local", "profesional")
+    profesional_id = crear_profesional(session_factory, uid_psico, "psicosocial")
+    asignar_profesional_a_menor(session_factory, menor_id, profesional_id, "psicosocial")
+    h_psico = {"Authorization": f"Bearer {login(client, 'psico_c12@prueba.local')}"}
+    r = client.post(
+        "/api/v1/citas",
+        json={"menor_id": menor_id, "tipo": "reunion_familia", "fecha_hora": "2026-06-01T09:00:00Z"},
+        headers=h_psico,
+    )
+    assert r.status_code == 403

@@ -1,11 +1,13 @@
 """Control de Alimentos: Casos de uso.
 
-Ingreso de cada mercado, si es perecedero y su fecha de vencimiento. Autorización por hogar
-(ADR-0009, sección 4), igual que `inventario`: `zonas_hogares.application.puede_ver_hogar`/
-`puede_gestionar_hogar`. Nunca se borra físico: se marca `consumido`.
+Ingreso de cada mercado, si es perecedero y su fecha de vencimiento. Lectura por hogar (ADR-0009,
+sección 4): `zonas_hogares.application.puede_ver_hogar`. Nunca se borra físico: se marca
+`consumido`.
 
-ADR-0014, sección 4: checklist reutilizable (el "producto del mercado"), sin distinción de rol
-adicional a la que ya tiene el módulo: misma `puede_ver_hogar`/`puede_gestionar_hogar`.
+ADR-0014, sección 4: checklist reutilizable (el "producto del mercado").
+
+ADR-0015: escritura exclusiva de madre/admin (`_puede_gestionar_alimentos`); coordinador,
+profesional, defensor y auditor solo leen (`puede_ver_hogar`, sin cambios).
 """
 import uuid
 from datetime import date
@@ -14,7 +16,8 @@ from sqlalchemy.orm import Session
 
 from app.core.audit import registrar_acceso
 from app.core.errors import no_encontrado, prohibido
-from app.modules.zonas_hogares.application import puede_gestionar_hogar, puede_ver_hogar
+from app.modules.auth.domain import Rol
+from app.modules.zonas_hogares.application import puede_ver_hogar
 
 from .domain import esta_vencido, validar_perecedero
 from .models import AlimentoChecklistItem, AlimentoItem
@@ -26,6 +29,16 @@ from .schemas import (
     AlimentoItemCreate,
     AlimentoItemUpdate,
 )
+
+
+def _puede_gestionar_alimentos(session: Session, usuario, hogar_id: uuid.UUID) -> bool:
+    """ADR-0015: escritura exclusiva de madre/admin; coordinador/profesional/defensor/auditor
+    solo leen (`puede_ver_hogar`, sin cambios). Se exige además `puede_ver_hogar` (no solo el
+    rol) para que una madre siga sin poder escribir en el hogar de otra madre: el rol fija
+    *quién* escribe, `puede_ver_hogar` sigue fijando *dónde* (CLAUDE.md, "denegar por defecto")."""
+    if usuario.rol not in (Rol.MADRE.value, Rol.ADMIN.value):
+        return False
+    return puede_ver_hogar(session, usuario, hogar_id)
 
 
 def _item_o_404(session: Session, item_id: uuid.UUID) -> AlimentoItem:
@@ -43,7 +56,7 @@ def _checklist_item_o_404(session: Session, checklist_item_id: uuid.UUID) -> Ali
 
 
 def crear_alimento(session: Session, usuario, datos: AlimentoItemCreate) -> AlimentoItem:
-    if not puede_gestionar_hogar(session, usuario, datos.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, datos.hogar_id):
         registrar_acceso(session, accion="alimento_creacion_denegada", usuario_id=usuario.id, recurso=str(datos.hogar_id))
         raise prohibido()
     validar_perecedero(datos.perecedero, datos.fecha_vencimiento)
@@ -83,7 +96,7 @@ def listar_alimentos(
 
 def actualizar_alimento(session: Session, usuario, item_id: uuid.UUID, datos: AlimentoItemUpdate) -> AlimentoItem:
     item = _item_o_404(session, item_id)
-    if not puede_gestionar_hogar(session, usuario, item.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="alimento_actualizacion_denegada", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
     if datos.descripcion is not None:
@@ -106,7 +119,7 @@ def actualizar_alimento(session: Session, usuario, item_id: uuid.UUID, datos: Al
 
 def marcar_consumido(session: Session, usuario, item_id: uuid.UUID) -> AlimentoItem:
     item = _item_o_404(session, item_id)
-    if not puede_gestionar_hogar(session, usuario, item.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="alimento_consumido_denegado", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
     item.consumido = True
@@ -120,7 +133,7 @@ def marcar_consumido(session: Session, usuario, item_id: uuid.UUID) -> AlimentoI
 # ---------------------------------------------------------------------------
 
 def crear_checklist_item(session: Session, usuario, datos: AlimentoChecklistItemCreate) -> AlimentoChecklistItem:
-    if not puede_gestionar_hogar(session, usuario, datos.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, datos.hogar_id):
         registrar_acceso(session, accion="alimento_checklist_creacion_denegada", usuario_id=usuario.id, recurso=str(datos.hogar_id))
         raise prohibido()
     item = AlimentoChecklistItem(
@@ -150,7 +163,7 @@ def actualizar_checklist_item(
     session: Session, usuario, checklist_item_id: uuid.UUID, datos: AlimentoChecklistItemUpdate
 ) -> AlimentoChecklistItem:
     item = _checklist_item_o_404(session, checklist_item_id)
-    if not puede_gestionar_hogar(session, usuario, item.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, item.hogar_id):
         registrar_acceso(session, accion="alimento_checklist_actualizacion_denegada", usuario_id=usuario.id, recurso=str(item.id))
         raise prohibido()
     if datos.descripcion is not None:
@@ -170,7 +183,7 @@ def comprar_de_checklist(
     """Atajo que pidió el usuario: crea un `AlimentoItem` nuevo (historial completo, nunca
     sobrescribe la compra anterior) tomando `descripcion`/`perecedero` del checklist."""
     checklist_item = _checklist_item_o_404(session, checklist_item_id)
-    if not puede_gestionar_hogar(session, usuario, checklist_item.hogar_id):
+    if not _puede_gestionar_alimentos(session, usuario, checklist_item.hogar_id):
         registrar_acceso(
             session, accion="alimento_checklist_compra_denegada", usuario_id=usuario.id, recurso=str(checklist_item.id)
         )

@@ -1,9 +1,14 @@
 """Citas y Recordatorios: casos de uso (ADR-0009, sección 2).
 
-"El sistema no las asigna, solo recuerda" (CLAUDE.md). Autorización de fila = `puede_ver_menor`;
-escritura = `puede_ver_menor` y no auditor. `puede_ver_notas` expone la corrección de seguridad
-(`notas` se oculta a quien no tenga `tiene_permiso_seccion`): el filtrado real se aplica en
-`api.py` sobre el esquema de salida, nunca mutando la entidad ORM.
+"El sistema no las asigna, solo recuerda" (CLAUDE.md). Autorización de fila (lectura) =
+`puede_ver_menor`, sin cambios. `puede_ver_notas` expone la corrección de seguridad (`notas` se
+oculta a quien no tenga `tiene_permiso_seccion`): el filtrado real se aplica en `api.py` sobre el
+esquema de salida, nunca mutando la entidad ORM.
+
+ADR-0015: la escritura depende del `tipo` de la cita, con un único rol dueño además de admin:
+madre para `medica`/`psicosocial`/`otro` (su propia agenda), defensor para `reunion_familia` (él
+decide la fecha con la familia biológica). Coordinador y profesional pierden toda escritura sobre
+citas; mantienen lectura íntegra vía `_puede_ver`.
 """
 import uuid
 from datetime import datetime, timezone
@@ -33,8 +38,17 @@ def _puede_ver(session: Session, usuario, menor_id: uuid.UUID) -> bool:
     return puede_ver_menor(session, usuario, menor_id)
 
 
-def _puede_escribir(session: Session, usuario, menor_id: uuid.UUID) -> bool:
-    return usuario.rol != Rol.AUDITOR.value and _puede_ver(session, usuario, menor_id)
+def _rol_propietario(tipo: str) -> str:
+    """ADR-0015: un único rol dueño por tipo de cita (además de admin)."""
+    if tipo == "reunion_familia":
+        return Rol.DEFENSOR.value
+    return Rol.MADRE.value
+
+
+def _puede_escribir_cita(usuario, tipo: str, session: Session, menor_id: uuid.UUID) -> bool:
+    return usuario.rol == Rol.ADMIN.value or (
+        usuario.rol == _rol_propietario(tipo) and _puede_ver(session, usuario, menor_id)
+    )
 
 
 def _sin_zona(dt: datetime) -> datetime:
@@ -61,7 +75,7 @@ def puede_ver_notas(session: Session, usuario, cita: Cita) -> bool:
 def crear_cita(session: Session, usuario, datos: CitaCreate) -> Cita:
     from app.modules.archivo.application import esta_archivado
 
-    if not _puede_escribir(session, usuario, datos.menor_id):
+    if not _puede_escribir_cita(usuario, datos.tipo, session, datos.menor_id):
         registrar_acceso(
             session, accion="cita_creacion_denegada", usuario_id=usuario.id, menor_id=datos.menor_id
         )
@@ -125,7 +139,7 @@ def obtener_cita(session: Session, usuario, cita_id: uuid.UUID) -> Cita:
 
 def actualizar_cita(session: Session, usuario, cita_id: uuid.UUID, datos: CitaUpdate) -> Cita:
     cita = _cita_o_404(session, cita_id)
-    if not _puede_escribir(session, usuario, cita.menor_id):
+    if not _puede_escribir_cita(usuario, cita.tipo, session, cita.menor_id):
         registrar_acceso(
             session, accion="cita_edicion_denegada", usuario_id=usuario.id, recurso=str(cita.id), menor_id=cita.menor_id
         )
@@ -147,7 +161,7 @@ def cambiar_estado_cita(session: Session, usuario, cita_id: uuid.UUID, estado: s
     if estado not in ESTADOS_CITA:
         raise ValueError(f"estado debe ser uno de {ESTADOS_CITA}")
     cita = _cita_o_404(session, cita_id)
-    if not _puede_escribir(session, usuario, cita.menor_id):
+    if not _puede_escribir_cita(usuario, cita.tipo, session, cita.menor_id):
         registrar_acceso(
             session, accion="cita_cambio_estado_denegado", usuario_id=usuario.id, recurso=str(cita.id), menor_id=cita.menor_id
         )

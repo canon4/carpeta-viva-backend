@@ -274,10 +274,17 @@ def test_panel_dispara_generacion_automatica(client, session_factory):
     menor_id = crear_menor(client, h_coord)
     ingresar_menor(client, h_coord, menor_id, hogar_id)
 
+    # ADR-0015: la cita médica es tarea de la madre, no del coordinador; el coordinador solo
+    # consulta el panel de alertas.
+    uid_madre = crear_usuario(session_factory, "madre_panel1@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "900-panel1")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_panel1@prueba.local')}"}
+
     client.post(
         "/api/v1/citas",
         json={"menor_id": menor_id, "tipo": "medica", "fecha_hora": "2020-01-01T10:00:00Z"},
-        headers=h_coord,
+        headers=h_madre,
     )
 
     r = client.get("/api/v1/alertas/panel", headers=h_coord)
