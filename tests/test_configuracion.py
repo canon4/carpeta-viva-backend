@@ -58,9 +58,19 @@ def test_admin_crea_opcion_en_grupo_con_seccion_exige_seccion_acceso(client, ses
         json={"valor": "antecedentes_judiciales", "etiqueta": "Antecedentes judiciales", "orden": 10},
         headers=h,
     )
-    # No es obligatorio enviar el campo (puede ser None/básica explícita), pero sí debe estar
-    # dentro del conjunto cerrado: aquí se omite y por default queda en None, lo que es válido
-    # (básica explícita). Se prueba el caso de un valor fuera del conjunto cerrado aparte.
+    # Omitir el campo por completo (no enviarlo) se rechaza: ADR-0013 sección 5.1 exige que el
+    # admin elija explícitamente, aunque la elección sea básica. "No enviado" y "enviado como
+    # null" son casos distintos (ver el siguiente test).
+    assert r.status_code == 400
+
+
+def test_admin_crea_opcion_en_grupo_con_seccion_null_explicito_es_basica(client, session_factory):
+    h = auth_header(client, session_factory, "admin1@prueba.local", "admin")
+    r = client.post(
+        "/api/v1/configuracion/catalogos/categoria_documento_menor",
+        json={"valor": "antecedentes_judiciales", "etiqueta": "Antecedentes judiciales", "seccion_acceso": None},
+        headers=h,
+    )
     assert r.status_code == 201
     assert r.json()["seccion_acceso"] is None
 

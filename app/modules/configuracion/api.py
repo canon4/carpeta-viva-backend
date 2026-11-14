@@ -92,6 +92,7 @@ def crear_opcion_catalogo_endpoint(
             datos.etiqueta,
             orden=datos.orden,
             seccion_acceso=datos.seccion_acceso,
+            seccion_acceso_fue_enviada="seccion_acceso" in datos.model_fields_set,
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc))

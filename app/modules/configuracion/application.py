@@ -145,16 +145,24 @@ def crear_opcion_catalogo(
     etiqueta: str,
     orden: int = 0,
     seccion_acceso: str | None = None,
+    seccion_acceso_fue_enviada: bool = False,
 ) -> CatalogoOpcion:
     """`POST /configuracion/catalogos/{grupo}` (ADR-0013, sección 3 y 5.1). Si el grupo exige
     `seccion_acceso`, es obligatorio (puede ser explícitamente básica = `None`) y debe estar en
-    `SECCIONES_VALIDAS`; rechaza con 400 en cualquier otro caso."""
+    `SECCIONES_VALIDAS`; rechaza con 400 en cualquier otro caso. `seccion_acceso_fue_enviada`
+    distingue "el campo vino en el cuerpo de la petición" (incluso como `null` explícito) de
+    "el campo se omitió" — ambos casos llegan aquí como `seccion_acceso=None` por el valor por
+    defecto de Pydantic, así que sin este indicador no hay forma de rechazar una omisión."""
     _requiere_admin(usuario, session, "catalogo_opcion_creacion_denegada")
     if grupo not in GRUPOS_CATALOGO:
         raise ValueError(f"Grupo de catálogo desconocido: {grupo}")
     definicion = GRUPOS_CATALOGO[grupo]
 
     if definicion.con_seccion_acceso:
+        if not seccion_acceso_fue_enviada:
+            raise ValueError(
+                "seccion_acceso es obligatorio para este grupo (puede ser explícitamente null = básica)"
+            )
         if seccion_acceso is not None and seccion_acceso not in SECCIONES_VALIDAS:
             raise ValueError(
                 f"seccion_acceso debe ser uno de {SECCIONES_VALIDAS} o None (básica), recibido: {seccion_acceso!r}"
