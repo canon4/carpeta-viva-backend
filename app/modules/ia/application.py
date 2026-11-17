@@ -432,6 +432,12 @@ def resumen_documento(session: Session, usuario, documento_id: uuid.UUID, *, pro
 
     from app.modules.documentos.application import obtener_documento, obtener_reporte
 
+    # Un resumen se genera desde el contenido: el auditor solo ve metadatos (ADR-0007 §2.3,
+    # ADR-0008 §4), igual que en `resumen_menor` y `consultar`.
+    if usuario.rol == Rol.AUDITOR.value:
+        registrar_acceso(session, accion="ia_resumen_documento_denegado", usuario_id=usuario.id, recurso=str(documento_id))
+        raise prohibido()
+
     fragmento_id_doc: uuid.UUID | None = None
     fragmento_id_rep: uuid.UUID | None = None
     try:

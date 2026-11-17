@@ -11,7 +11,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.core.audit import registrar_acceso
-from app.core.errors import no_encontrado
+from app.core.errors import no_encontrado, prohibido
 from app.modules.auth.domain import Rol
 
 from .domain import validar_capacidad
@@ -26,8 +26,31 @@ def crear_zona(session: Session, datos: ZonaCreate, usuario_id: uuid.UUID) -> Zo
     return zona
 
 
-def listar_zonas(session: Session) -> list[Zona]:
-    return ZonaRepository(session).listar()
+def _es_coordinador(usuario) -> bool:
+    return usuario is not None and usuario.rol == Rol.COORDINADOR.value
+
+
+def _exigir_zona_propia(session: Session, usuario, zona_id: uuid.UUID | None, accion: str, recurso: str) -> None:
+    """El coordinador solo actúa sobre su zona (ADR-0007 §2.2, RN03). Deniega por defecto si no
+    tiene zona y registra el intento denegado en auditoría. Admin no tiene restricción."""
+    if not _es_coordinador(usuario):
+        return
+    if usuario.zona_id is None or zona_id != usuario.zona_id:
+        registrar_acceso(session, accion=f"{accion}_denegado", usuario_id=usuario.id, recurso=recurso)
+        raise prohibido()
+
+
+def listar_zonas(session: Session, usuario=None) -> list[Zona]:
+    zonas = ZonaRepository(session).listar()
+    if _es_coordinador(usuario):
+        return [z for z in zonas if usuario.zona_id is not None and z.id == usuario.zona_id]
+    return zonas
+
+
+def obtener_zona_visible(session: Session, zona_id: uuid.UUID, usuario) -> Zona:
+    zona = obtener_zona(session, zona_id)
+    _exigir_zona_propia(session, usuario, zona.id, "zona_lectura", str(zona_id))
+    return zona
 
 
 def obtener_zona(session: Session, zona_id: uuid.UUID) -> Zona:
@@ -48,9 +71,10 @@ def actualizar_zona(session: Session, zona_id: uuid.UUID, datos: ZonaUpdate, usu
     return zona
 
 
-def crear_hogar(session: Session, datos: HogarCreate, usuario_id: uuid.UUID) -> HogarSustituto:
+def crear_hogar(session: Session, datos: HogarCreate, usuario_id: uuid.UUID, usuario=None) -> HogarSustituto:
     validar_capacidad(datos.capacidad_maxima)
     obtener_zona(session, datos.zona_id)
+    _exigir_zona_propia(session, usuario, datos.zona_id, "hogar_creacion", str(datos.zona_id))
     hogar = HogarSustituto(
         zona_id=datos.zona_id,
         capacidad_maxima=datos.capacidad_maxima,
@@ -61,7 +85,13 @@ def crear_hogar(session: Session, datos: HogarCreate, usuario_id: uuid.UUID) -> 
     return hogar
 
 
-def listar_hogares(session: Session, zona_id: uuid.UUID | None = None) -> list[HogarSustituto]:
+def listar_hogares(session: Session, zona_id: uuid.UUID | None = None, usuario=None) -> list[HogarSustituto]:
+    if _es_coordinador(usuario):
+        if zona_id is not None:
+            _exigir_zona_propia(session, usuario, zona_id, "hogares_listado", str(zona_id))
+        if usuario.zona_id is None:
+            return []
+        zona_id = usuario.zona_id
     return HogarRepository(session).listar(zona_id)
 
 
@@ -79,16 +109,30 @@ def obtener_hogar(session: Session, hogar_id: uuid.UUID) -> HogarSustituto:
     return hogar
 
 
-def actualizar_hogar(session: Session, hogar_id: uuid.UUID, datos: HogarUpdate, usuario_id: uuid.UUID) -> HogarSustituto:
+def obtener_hogar_visible(session: Session, hogar_id: uuid.UUID, usuario) -> HogarSustituto:
+    hogar = obtener_hogar(session, hogar_id)
+    _exigir_zona_propia(session, usuario, hogar.zona_id, "hogar_lectura", str(hogar_id))
+    return hogar
+
+
+def actualizar_hogar(
+    session: Session, hogar_id: uuid.UUID, datos: HogarUpdate, usuario_id: uuid.UUID, usuario=None
+) -> HogarSustituto:
     from app.modules.madres.repository import MadreRepository  # evita import circular entre módulos
 
     hogar = obtener_hogar(session, hogar_id)
+    _exigir_zona_propia(session, usuario, hogar.zona_id, "hogar_actualizacion", str(hogar_id))
     if datos.capacidad_maxima is not None:
         validar_capacidad(datos.capacidad_maxima)
         hogar.capacidad_maxima = datos.capacidad_maxima
     if datos.madre_id is not None:
         if MadreRepository(session).por_id(datos.madre_id) is None:
             raise no_encontrado("Madre sustituta no encontrada")
+        otro = HogarRepository(session).por_madre_id(datos.madre_id)
+        if otro is not None and otro.id != hogar.id:
+            # Una madre tiene un solo hogar (RN01). Reasignarla desde otro hogar, quizá de otra
+            # zona, le daría acceso a los NNA de este hogar sin pasar por su coordinador.
+            raise ValueError("La madre ya está vinculada a otro hogar")
         hogar.madre_id = datos.madre_id
     if datos.estado is not None:
         hogar.estado = datos.estado.value
@@ -111,6 +155,17 @@ def _profesional_tiene_menor_en_hogar(session: Session, usuario_id: uuid.UUID, h
         if vigente is not None and vigente.hogar_id == hogar_id:
             return True
     return False
+
+
+def coordinador_puede_ver_madre(session: Session, usuario, madre_id: uuid.UUID) -> bool:
+    """Coordinador: ve a una madre si su hogar está en su zona o si todavía no tiene hogar (madres
+    disponibles para vincular). Para cualquier otro rol devuelve True: el rol ya lo filtró la API."""
+    if not _es_coordinador(usuario):
+        return True
+    hogar = HogarRepository(session).por_madre_id(madre_id)
+    if hogar is None:
+        return True
+    return usuario.zona_id is not None and hogar.zona_id == usuario.zona_id
 
 
 def puede_ver_hogar(session: Session, usuario, hogar_id: uuid.UUID) -> bool:

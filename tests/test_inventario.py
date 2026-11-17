@@ -2,6 +2,9 @@
 mediante `puede_ver_hogar`/`puede_gestionar_hogar`, y que "eliminar" solo desactiva/marca
 estado en vez de borrar físico.
 """
+# Cabecera JPEG real seguida de bytes sintéticos: pasa la detección por firma de bytes.
+JPEG_SINTETICO = b"\xff\xd8\xff\xe0contenido-sintetico"
+
 from ._helpers import (
     asignar_profesional_a_menor,
     auth_header,
@@ -382,7 +385,7 @@ def test_subir_foto_valida(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     )
@@ -397,7 +400,7 @@ def test_subir_foto_tipo_invalido_es_422(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.pdf", b"contenido-sintetico", "application/pdf")},
+        files={"archivo": ("evidencia.pdf", b"%PDF-1.4 sintetico", "application/pdf")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     )
@@ -407,7 +410,7 @@ def test_subir_foto_tipo_invalido_es_422(client, session_factory):
 def test_subir_foto_excede_tamanio_es_422(client, session_factory):
     hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto3", "madre_foto3@prueba.local", "foto-3")
 
-    contenido_grande = b"a" * (5 * 1024 * 1024 + 1)
+    contenido_grande = JPEG_SINTETICO + b"a" * (5 * 1024 * 1024 + 1)
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
         files={"archivo": ("evidencia.jpg", contenido_grande, "image/jpeg")},
@@ -423,7 +426,7 @@ def test_subir_mas_de_6_fotos_es_422(client, session_factory):
     for i in range(6):
         r = client.post(
             f"/api/v1/inventario/items/{item_id}/fotos",
-            files={"archivo": (f"evidencia{i}.jpg", b"contenido-sintetico", "image/jpeg")},
+            files={"archivo": (f"evidencia{i}.jpg", JPEG_SINTETICO, "image/jpeg")},
             data={"declaracion_sin_menores": "true"},
             headers=h_madre,
         )
@@ -431,7 +434,7 @@ def test_subir_mas_de_6_fotos_es_422(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia7.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia7.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     )
@@ -449,7 +452,7 @@ def test_coordinador_no_puede_subir_foto(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_coord,
     )
@@ -463,7 +466,7 @@ def test_subir_foto_sin_declaracion_es_422(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         headers=h_madre,
     )
     assert r.status_code == 422
@@ -476,7 +479,7 @@ def test_subir_foto_con_declaracion_false_es_422(client, session_factory):
 
     r = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "false"},
         headers=h_madre,
     )
@@ -487,7 +490,7 @@ def test_lectura_de_fotos_restringida_a_madre_admin_auditor(client, session_fact
     hogar_id, item_id, h_madre = _item_recibido_de_madre(client, session_factory, "Zona foto6", "madre_foto6@prueba.local", "foto-6")
     client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     )
@@ -499,7 +502,7 @@ def test_lectura_de_fotos_restringida_a_madre_admin_auditor(client, session_fact
 
     r = client.get(f"/api/v1/inventario/items/{item_id}/fotos/{foto_id}", headers=h_madre)
     assert r.status_code == 200
-    assert r.content == b"contenido-sintetico"
+    assert r.content == JPEG_SINTETICO
 
     h_auditor = auth_header(client, session_factory, "auditor_foto6@prueba.local", "auditor")
     r = client.get(f"/api/v1/inventario/items/{item_id}/fotos", headers=h_auditor)
@@ -525,7 +528,7 @@ def test_coordinador_profesional_defensor_no_leen_fotos(client, session_factory)
     ).json()["id"]
     foto_id = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     ).json()["id"]
@@ -548,7 +551,7 @@ def test_admin_oculta_foto_y_deja_de_verla_la_madre(client, session_factory):
     )
     foto_id = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     ).json()["id"]
@@ -580,7 +583,7 @@ def test_no_admin_no_puede_ocultar_foto(client, session_factory):
     )
     foto_id = client.post(
         f"/api/v1/inventario/items/{item_id}/fotos",
-        files={"archivo": ("evidencia.jpg", b"contenido-sintetico", "image/jpeg")},
+        files={"archivo": ("evidencia.jpg", JPEG_SINTETICO, "image/jpeg")},
         data={"declaracion_sin_menores": "true"},
         headers=h_madre,
     ).json()["id"]

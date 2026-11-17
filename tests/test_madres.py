@@ -94,7 +94,8 @@ def test_madre_yo_incluye_su_hogar_sin_pasar_por_zonas_hogares(client, session_f
         s.commit()
         usuario_id = str(usuario.id)
 
-    h_coord = auth_header(client, session_factory, "coord3@prueba.local", "coordinador")
+    # Admin: crear la zona es solo de admin (ADR-0016) y un coordinador necesita zona propia.
+    h_coord = auth_header(client, session_factory, "admin3@prueba.local", "admin")
     r = crear_madre(client, h_coord, "104", usuario_id=usuario_id)
     madre_id = r.json()["id"]
 

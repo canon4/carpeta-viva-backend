@@ -50,16 +50,16 @@ def crear_madre_endpoint(
 
 @router.get("", response_model=list[MadreOut], summary="Listar madres sustitutas")
 def listar_madres_endpoint(
-    session: Session = Depends(get_session), _=Depends(_coordinador_o_admin)
+    session: Session = Depends(get_session), usuario: Usuario = Depends(_coordinador_o_admin)
 ) -> list[MadreOut]:
-    return listar_madres(session)
+    return listar_madres(session, usuario)
 
 
 @router.get("/{madre_id}", response_model=MadreOut, summary="Obtener madre sustituta")
 def obtener_madre_endpoint(
-    madre_id: uuid.UUID, session: Session = Depends(get_session), _=Depends(_coordinador_o_admin)
+    madre_id: uuid.UUID, session: Session = Depends(get_session), usuario: Usuario = Depends(_coordinador_o_admin)
 ) -> MadreOut:
-    return obtener_madre(session, madre_id)
+    return obtener_madre(session, madre_id, usuario)
 
 
 @router.put("/{madre_id}", response_model=MadreOut, summary="Actualizar madre sustituta")
@@ -69,4 +69,4 @@ def actualizar_madre_endpoint(
     session: Session = Depends(get_session),
     usuario: Usuario = Depends(_coordinador_o_admin),
 ) -> MadreOut:
-    return actualizar_madre(session, madre_id, datos, usuario.id)
+    return actualizar_madre(session, madre_id, datos, usuario.id, usuario)

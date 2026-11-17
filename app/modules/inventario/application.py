@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core import almacenamiento
 from app.core.audit import registrar_acceso
 from app.core.errors import no_encontrado, prohibido
+from app.core.tipos_archivo import detectar_tipo
 from app.modules.auth.domain import Rol
 from app.modules.zonas_hogares.application import puede_gestionar_hogar, puede_ver_hogar
 
@@ -160,10 +161,12 @@ def subir_foto_item(
     # ningún NNA es obligatoria en cada subida, no un aviso de interfaz que se pueda ignorar.
     if not declaracion_sin_menores:
         raise ValueError("Debe declarar que la foto no muestra a ningún NNA para poder subirla")
-    if mime_type not in MIME_FOTOS_PERMITIDOS:
-        raise ValueError("Tipo de imagen no permitido; use JPEG, PNG o WEBP")
     if len(contenido) == 0:
         raise ValueError("La foto está vacía")
+    # El tipo se decide por los bytes, no por el `Content-Type` que declara el cliente.
+    mime_type = detectar_tipo(contenido)
+    if mime_type not in MIME_FOTOS_PERMITIDOS:
+        raise ValueError("Tipo de imagen no permitido; use JPEG, PNG o WEBP")
     if len(contenido) > FOTO_TAMANIO_MAXIMO_BYTES:
         raise ValueError(f"La foto supera el tamaño máximo permitido ({FOTO_TAMANIO_MAXIMO_BYTES // (1024 * 1024)} MB)")
     if InventarioItemFotoRepository(session).contar(item_id) >= FOTOS_MAXIMO_POR_ITEM:

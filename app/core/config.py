@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     jwt_secret: str = JWT_SECRET_POR_DEFECTO
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    # Bloqueo temporal tras intentos fallidos de inicio de sesión (RF0.5, HU04).
+    login_max_intentos: int = 5
+    login_bloqueo_minutos: int = 15
+    # Política mínima de contraseña al cambiarla (RF0.4, HU03).
+    password_longitud_minima: int = 10
     fuseki_url: str = "http://localhost:3030/ds"
     cors_origins: list[str] = ["http://localhost:4200"]
     archivos_dir: str = "./data/archivos"

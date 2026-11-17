@@ -30,6 +30,10 @@ def usuario_actual(
     usuario = UsuarioRepository(session).por_id(usuario_id)
     if usuario is None or not usuario.activo:
         raise no_autenticado("Usuario inactivo o inexistente")
+    from app.modules.auth.application import token_revocado  # evita ciclo core <-> auth
+
+    if token_revocado(usuario, datos.get("iat")):
+        raise no_autenticado("La sesión ya no es válida; inicie sesión de nuevo")
     return usuario
 
 

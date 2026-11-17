@@ -17,6 +17,7 @@ from app.core import almacenamiento
 from app.core.audit import registrar_acceso
 from app.core.compresion import comprimir_si_es_imagen
 from app.core.config import get_settings
+from app.core.tipos_archivo import validar_documento
 from app.core.errors import no_encontrado, prohibido
 from app.modules.auth.domain import Rol
 
@@ -217,6 +218,9 @@ def crear_documento(
 ) -> Documento:
     if (menor_id is None) == (hogar_id is None):
         raise ValueError("Debe indicarse exactamente uno de menor_id o hogar_id")
+    # El tipo se decide por los bytes; el declarado por el cliente (`mime_type`) se descarta.
+    _validar_tamanio(contenido)
+    mime_type = validar_documento(contenido, nombre_original)
     if migracion and usuario.rol in (Rol.COORDINADOR.value, Rol.ADMIN.value) and not motivo:
         raise ValueError("motivo es obligatorio para documentos de migración histórica")
     if esta_archivado(session, menor_id):
@@ -425,6 +429,8 @@ def crear_version(
     tareas_fondo: BackgroundTasks | None = None,
 ) -> Documento:
     documento = _documento_o_404(session, documento_id)
+    _validar_tamanio(contenido)
+    mime_type = validar_documento(contenido, nombre_original)
     if documento.estado_flujo not in ("borrador", "devuelto"):
         raise ValueError("Solo se puede subir una nueva versión en estado borrador o devuelto")
     if esta_archivado(session, documento.menor_id):

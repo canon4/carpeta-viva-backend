@@ -119,6 +119,15 @@ def crear_asignacion(session: Session, usuario, datos: AsignacionCreate) -> Asig
             raise ValueError("No hay asignación vigente para trasladar; use tipo_movimiento=ingreso")
         if vigente.hogar_id == datos.hogar_id:
             raise ValueError("El hogar de destino es el mismo hogar actual")
+        # El coordinador debe administrar también la zona de origen: si no, podría traer a su
+        # zona (y pasar a ver) un NNA de otra zona (ADR-0007 §2.2).
+        if usuario.rol == Rol.COORDINADOR.value and not _puede_gestionar(
+            session, usuario, datos.menor_id, vigente.hogar_id
+        ):
+            registrar_acceso(
+                session, accion="asignacion_creacion_denegada", usuario_id=usuario.id, menor_id=datos.menor_id
+            )
+            raise prohibido()
     else:
         raise ValueError("tipo_movimiento debe ser 'ingreso' o 'traslado' al crear una asignación")
 

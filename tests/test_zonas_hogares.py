@@ -21,8 +21,9 @@ def auth_header(client, session_factory, email, rol):
     return {"Authorization": f"Bearer {token}"}
 
 
-def test_coordinador_crea_y_lista_zonas(client, session_factory):
-    h = auth_header(client, session_factory, "coord1@prueba.local", "coordinador")
+def test_admin_crea_y_lista_zonas(client, session_factory):
+    # Crear y renombrar zonas es solo de admin (ADR-0016); el coordinador queda en su zona.
+    h = auth_header(client, session_factory, "admin0@prueba.local", "admin")
 
     r = client.post("/api/v1/zonas-hogares/zonas", json={"nombre": "Zona 1", "descripcion": "Florencia"}, headers=h)
     assert r.status_code == 201
@@ -76,7 +77,7 @@ def test_admin_crea_hogar_y_lo_filtra_por_zona(client, session_factory):
 
 
 def test_capacidad_invalida_es_422(client, session_factory):
-    h = auth_header(client, session_factory, "coord2@prueba.local", "coordinador")
+    h = auth_header(client, session_factory, "admin2@prueba.local", "admin")
     r = client.post("/api/v1/zonas-hogares/zonas", json={"nombre": "Zona 3"}, headers=h)
     zona_id = r.json()["id"]
 

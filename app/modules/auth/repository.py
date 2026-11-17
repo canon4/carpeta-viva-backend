@@ -16,6 +16,12 @@ class UsuarioRepository:
     def por_id(self, usuario_id: uuid.UUID) -> Usuario | None:
         return self.session.get(Usuario, usuario_id)
 
+    def guardar(self, usuario: Usuario) -> Usuario:
+        self.session.add(usuario)
+        self.session.commit()
+        self.session.refresh(usuario)
+        return usuario
+
     def listar_por_rol(self, rol: str, zona_id: uuid.UUID | None = None) -> list[Usuario]:
         """Usado por `alertas` (ADR-0009) para resolver destinatarios de respaldo: coordinador de
         una zona o, en su defecto, cualquier admin."""

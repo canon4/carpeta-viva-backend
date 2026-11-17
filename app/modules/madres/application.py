@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.core.audit import registrar_acceso
-from app.core.errors import no_encontrado
+from app.core.errors import no_encontrado, prohibido
 
 from .models import MadreSustituta
 from .repository import MadreRepository
@@ -28,19 +28,33 @@ def crear_madre(session: Session, datos: MadreCreate, usuario_id: uuid.UUID) -> 
     return madre
 
 
-def listar_madres(session: Session) -> list[MadreSustituta]:
-    return MadreRepository(session).listar()
+def _visible_para(session: Session, usuario, madre_id: uuid.UUID) -> bool:
+    """Coordinador acotado a su zona (RN03): ve madres de hogares de su zona y madres sin hogar."""
+    if usuario is None:
+        return True
+    from app.modules.zonas_hogares.application import coordinador_puede_ver_madre  # evita ciclo
+
+    return coordinador_puede_ver_madre(session, usuario, madre_id)
 
 
-def obtener_madre(session: Session, madre_id: uuid.UUID) -> MadreSustituta:
+def listar_madres(session: Session, usuario=None) -> list[MadreSustituta]:
+    return [m for m in MadreRepository(session).listar() if _visible_para(session, usuario, m.id)]
+
+
+def obtener_madre(session: Session, madre_id: uuid.UUID, usuario=None) -> MadreSustituta:
     madre = MadreRepository(session).por_id(madre_id)
     if madre is None:
         raise no_encontrado("Madre sustituta no encontrada")
+    if not _visible_para(session, usuario, madre.id):
+        registrar_acceso(session, accion="madre_acceso_denegado", usuario_id=usuario.id, recurso=str(madre_id))
+        raise prohibido()
     return madre
 
 
-def actualizar_madre(session: Session, madre_id: uuid.UUID, datos: MadreUpdate, usuario_id: uuid.UUID) -> MadreSustituta:
-    madre = obtener_madre(session, madre_id)
+def actualizar_madre(
+    session: Session, madre_id: uuid.UUID, datos: MadreUpdate, usuario_id: uuid.UUID, usuario=None
+) -> MadreSustituta:
+    madre = obtener_madre(session, madre_id, usuario)
     if datos.direccion is not None:
         madre.direccion = datos.direccion
     if datos.telefono is not None:
