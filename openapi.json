@@ -8786,6 +8786,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "reservado": {
+            "type": "boolean",
+            "title": "Reservado",
+            "default": false
           }
         },
         "type": "object",

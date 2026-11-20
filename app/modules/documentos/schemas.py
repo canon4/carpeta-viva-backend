@@ -28,6 +28,8 @@ class DocumentoOut(BaseModel):
     revisado_en: datetime | None = None
     motivo_devolucion: str | None = None
     created_at: datetime
+    # ADR-0018: subida propia de la madre en una sección que no puede leer; solo metadatos.
+    reservado: bool = False
 
 
 class DocumentoVersionOut(BaseModel):

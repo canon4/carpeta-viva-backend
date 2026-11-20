@@ -56,9 +56,25 @@ def test_madre_sin_permiso_seccion_sube_salud_directo_a_revision_sin_poder_leerl
     assert r.status_code == 201
     assert r.json()["estado_flujo"] == "en_revision"
     doc_id = r.json()["id"]
-    # Sigue sin poder leerlo ni descargarlo, ni aparece en su lista.
+    # Lo ve en su lista como reservado (solo metadatos), pero no puede abrirlo ni descargarlo.
     assert client.get(f"/api/v1/documentos/{doc_id}", headers=h_madre).status_code == 403
-    assert doc_id not in [d["id"] for d in client.get("/api/v1/documentos", headers=h_madre).json()]
+    assert client.get(f"/api/v1/documentos/{doc_id}/contenido", headers=h_madre).status_code in (403, 404)
+    propios = {d["id"]: d for d in client.get("/api/v1/documentos", headers=h_madre).json()}
+    assert propios[doc_id]["reservado"] is True
+    assert propios[doc_id]["titulo"] == "Historia clínica"
+
+    # Un documento sensible que no subió ella sigue sin aparecer.
+    uid_psico = crear_usuario(session_factory, "psico_doc1@prueba.local", "profesional")
+    profesional_id = crear_profesional(session_factory, uid_psico, "psicosocial")
+    asignar_profesional_a_menor(session_factory, menor_id, profesional_id, "psicosocial")
+    h_psico = {"Authorization": f"Bearer {login(client, 'psico_doc1@prueba.local')}"}
+    ajeno = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "psicosocial", "titulo": "Informe del profesional"},
+        files=archivo(),
+        headers=h_psico,
+    ).json()["id"]
+    assert ajeno not in [d["id"] for d in client.get("/api/v1/documentos", headers=h_madre).json()]
 
 
 def test_madre_no_sube_documentos_de_un_menor_que_no_esta_en_su_hogar(client, session_factory):

@@ -293,9 +293,27 @@ def listar_documentos(
     crudo = DocumentoRepository(session).listar(
         menor_id=menor_id, hogar_id=hogar_id, categoria=categoria, estado_flujo=estado_flujo
     )
-    resultado = [d for d in crudo if _puede_ver_documento(session, usuario, d)]
+    resultado = []
+    for d in crudo:
+        if _puede_ver_documento(session, usuario, d):
+            resultado.append(d)
+        elif _es_subida_reservada_propia(session, usuario, d):
+            # ADR-0018: la madre ve los metadatos de lo que ella misma subió a una sección que no
+            # puede leer (título, categoría, estado), nunca el contenido.
+            d.reservado = True
+            resultado.append(d)
     registrar_acceso(session, accion="documentos_listados", usuario_id=usuario.id)
     return resultado
+
+
+def _es_subida_reservada_propia(session: Session, usuario, documento: Documento) -> bool:
+    """Documento de un menor que la madre creó y aún puede ver en su hogar (si el menor sale del
+    hogar se le oculta todo, RF7), pero cuya sección no tiene habilitada."""
+    if usuario.rol != Rol.MADRE.value or documento.creado_por != usuario.id or documento.menor_id is None:
+        return False
+    from app.modules.menores.application import puede_ver_menor
+
+    return puede_ver_menor(session, usuario, documento.menor_id)
 
 
 def obtener_documento(session: Session, usuario, documento_id: uuid.UUID) -> Documento:
