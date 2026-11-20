@@ -35,7 +35,8 @@ def archivo(nombre="prueba.txt", contenido=b"contenido sintetico de prueba", tip
     return {"archivo": (nombre, contenido, tipo)}
 
 
-def test_madre_sin_permiso_seccion_no_crea_documento_salud(client, session_factory):
+def test_madre_sin_permiso_seccion_sube_salud_directo_a_revision_sin_poder_leerlo(client, session_factory):
+    """La madre crea, el profesional revisa: sube aunque no pueda leer la sección sensible."""
     zona_id, hogar_id = crear_zona_y_hogar(session_factory)
     h_admin = auth_header(client, session_factory, "admin_doc1@prueba.local", "admin")
     menor_id = crear_menor(client, h_admin)
@@ -52,7 +53,62 @@ def test_madre_sin_permiso_seccion_no_crea_documento_salud(client, session_facto
         files=archivo(),
         headers=h_madre,
     )
+    assert r.status_code == 201
+    assert r.json()["estado_flujo"] == "en_revision"
+    doc_id = r.json()["id"]
+    # Sigue sin poder leerlo ni descargarlo, ni aparece en su lista.
+    assert client.get(f"/api/v1/documentos/{doc_id}", headers=h_madre).status_code == 403
+    assert doc_id not in [d["id"] for d in client.get("/api/v1/documentos", headers=h_madre).json()]
+
+
+def test_madre_no_sube_documentos_de_un_menor_que_no_esta_en_su_hogar(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory)
+    h_admin = auth_header(client, session_factory, "admin_doc1b@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin)
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+    _, otro_hogar_id = crear_zona_y_hogar(session_factory, nombre_zona="Zona sintética B")
+
+    uid_madre = crear_usuario(session_factory, "madre_doc1b@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "900-1b")
+    vincular_hogar_madre(session_factory, otro_hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_doc1b@prueba.local')}"}
+
+    for categoria in ("salud", "otros"):
+        r = client.post(
+            "/api/v1/documentos",
+            data={"menor_id": menor_id, "categoria": categoria, "titulo": "No es suyo"},
+            files=archivo(),
+            headers=h_madre,
+        )
+        assert r.status_code == 403
+
+
+def test_madre_sin_permiso_no_versiona_documento_sensible_ajeno(client, session_factory):
+    """Cambia la madre del hogar: la nueva, sin permiso de salud, no toca el borrador de la anterior."""
+    _, _, h_madre_a, menor_id, _ = _crear_menor_con_defensor_y_permiso_salud(client, session_factory, "doc1c")
+    doc_id = client.post(
+        "/api/v1/documentos",
+        data={"menor_id": menor_id, "categoria": "salud", "titulo": "Borrador de la madre anterior"},
+        files=archivo(),
+        headers=h_madre_a,
+    ).json()["id"]
+
+    import uuid
+
+    from sqlalchemy import select
+
+    from app.modules.asignaciones.models import Asignacion
+
+    with session_factory() as s:
+        hogar_id = str(s.scalars(select(Asignacion.hogar_id).where(Asignacion.menor_id == uuid.UUID(menor_id))).first())
+    uid_madre_b = crear_usuario(session_factory, "madre_doc1c_b@prueba.local", "madre")
+    madre_b = crear_madre(session_factory, uid_madre_b, "900-1c-b")
+    vincular_hogar_madre(session_factory, hogar_id, madre_b)
+    h_madre_b = {"Authorization": f"Bearer {login(client, 'madre_doc1c_b@prueba.local')}"}
+
+    r = client.post(f"/api/v1/documentos/{doc_id}/version", files=archivo(), headers=h_madre_b)
     assert r.status_code == 403
+    assert client.put(f"/api/v1/documentos/{doc_id}/enviar", headers=h_madre_b).status_code == 403
 
 
 def test_madre_con_permiso_seccion_crea_documento_salud_en_borrador(client, session_factory):

@@ -140,9 +140,12 @@ def _resolver_creacion_menor(session: Session, usuario, menor_id: uuid.UUID, cat
     if rol == Rol.MADRE.value:
         if not puede_ver_menor(session, usuario, menor_id):
             return None
+        # "La madre crea, el profesional revisa": puede subir a cualquier categoría de un menor de
+        # su hogar. Si la sección es sensible y no tiene permiso de lectura, el documento entra
+        # directo en revisión: ella no podrá abrirlo, así que no puede quedar en su borrador.
         seccion = seccion_de_categoria(session, categoria)
         if seccion is not None and not tiene_permiso_seccion(session, usuario, menor_id, seccion):
-            return None
+            return "en_revision"
         return "borrador"
 
     return None
@@ -179,7 +182,10 @@ def _puede_editar_documento(session: Session, usuario, documento: Documento) -> 
     if usuario.id == documento.creado_por:
         return True
     if documento.menor_id is not None:
-        return _resolver_creacion_menor(session, usuario, documento.menor_id, documento.categoria, migracion=False) is not None
+        if _resolver_creacion_menor(session, usuario, documento.menor_id, documento.categoria, migracion=False) is None:
+            return False
+        # Que la madre pueda subir sin leer no le da acceso a documentos ajenos de esa sección.
+        return usuario.rol != Rol.MADRE.value or _puede_ver_documento(session, usuario, documento)
     if documento.hogar_id is not None:
         return _resolver_creacion_hogar(session, usuario, documento.hogar_id, documento.categoria) is not None
     return False
