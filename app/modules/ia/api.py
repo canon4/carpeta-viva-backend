@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_session
@@ -8,6 +8,10 @@ from app.core.deps import usuario_actual
 from app.modules.auth.models import Usuario
 
 from .application import (
+    listar_modelos_disponibles,
+    actualizar_configuracion,
+    obtener_configuracion,
+    probar_configuracion,
     apoyo_redaccion,
     clasificar_contenido,
     consultar,
@@ -19,6 +23,10 @@ from .application import (
     resumen_menor,
 )
 from .schemas import (
+    IaModelosOut,
+    IaConfiguracionOut,
+    IaConfiguracionUpdate,
+    IaPruebaOut,
     ConsultaCreate,
     ConsultaMetadatosOut,
     ConsultaOut,
@@ -39,8 +47,64 @@ def modulo_estado() -> dict[str, str]:
 
 
 @router.get("/estado", response_model=EstadoIaOut, summary="Configuración activa del asistente (admin)")
-def estado_endpoint(usuario: Usuario = Depends(usuario_actual)) -> EstadoIaOut:
-    return EstadoIaOut(**estado(usuario))
+def estado_endpoint(
+    session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> EstadoIaOut:
+    return EstadoIaOut(**estado(usuario, session))
+
+
+@router.get(
+    "/configuracion",
+    response_model=IaConfiguracionOut,
+    summary="Proveedor, modelo y estado de la clave de API (admin; la clave nunca se devuelve)",
+)
+def obtener_configuracion_endpoint(
+    session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> IaConfiguracionOut:
+    return IaConfiguracionOut(**obtener_configuracion(session, usuario))
+
+
+@router.put(
+    "/configuracion",
+    response_model=IaConfiguracionOut,
+    summary="Cambia proveedor, modelo o clave de API (admin; la clave se guarda cifrada)",
+)
+def actualizar_configuracion_endpoint(
+    datos: IaConfiguracionUpdate,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> IaConfiguracionOut:
+    try:
+        return IaConfiguracionOut(**actualizar_configuracion(session, usuario, datos))
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.get(
+    "/configuracion/modelos",
+    response_model=IaModelosOut,
+    summary="Modelos que la cuenta puede usar, consultados al proveedor (admin)",
+)
+def listar_modelos_endpoint(
+    proveedor: str | None = None,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> IaModelosOut:
+    try:
+        return IaModelosOut(**listar_modelos_disponibles(session, usuario, proveedor))
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.post(
+    "/configuracion/probar",
+    response_model=IaPruebaOut,
+    summary="Prueba la conexión con el proveedor configurado, sin datos de expedientes (admin)",
+)
+def probar_configuracion_endpoint(
+    session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> IaPruebaOut:
+    return IaPruebaOut(**probar_configuracion(session, usuario))
 
 
 @router.post("/consultas", response_model=ConsultaOut, summary="Pregunta en lenguaje natural (RAG con citas)")

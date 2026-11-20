@@ -8,7 +8,7 @@ from app.modules.auth.models import Usuario  # noqa: F401
 from app.modules.citas.models import Cita  # noqa: F401
 from app.modules.configuracion.models import CatalogoOpcion, ConfiguracionParametro  # noqa: F401
 from app.modules.documentos.models import Documento, DocumentoVersion, Reporte  # noqa: F401
-from app.modules.ia.models import FragmentoDocumento, IaConsulta  # noqa: F401
+from app.modules.ia.models import FragmentoDocumento, IaConfiguracion, IaConsulta  # noqa: F401
 from app.modules.inventario.models import (  # noqa: F401
     HogarConviviente,
     HogarRedApoyo,

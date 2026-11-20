@@ -15,6 +15,7 @@ from .application import (
     historial_menor,
     listar_familiares,
     listar_menores,
+    hogar_vigente,
     listar_permisos,
     obtener_menor,
     panel_profesional,
@@ -25,6 +26,7 @@ from .schemas import (
     FamiliarCreate,
     FamiliarOut,
     HogarPanelGroup,
+    HogarVigenteOut,
     MenorCreate,
     MenorHistoryOut,
     MenorOut,
@@ -118,6 +120,17 @@ def crear_familiar_endpoint(
     usuario: Usuario = Depends(usuario_actual),
 ) -> FamiliarOut:
     return crear_familiar(session, usuario, menor_id, datos)
+
+
+@router.get(
+    "/{menor_id}/hogar-vigente",
+    response_model=HogarVigenteOut | None,
+    summary="Hogar, zona y madre actuales del menor (null si no tiene asignación vigente)",
+)
+def hogar_vigente_endpoint(
+    menor_id: uuid.UUID, session: Session = Depends(get_session), usuario: Usuario = Depends(usuario_actual)
+) -> HogarVigenteOut | None:
+    return hogar_vigente(session, usuario, menor_id)
 
 
 @router.get("/{menor_id}/permisos", response_model=list[PermisoOut], summary="Listar permisos de expediente")

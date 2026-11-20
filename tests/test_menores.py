@@ -238,3 +238,50 @@ def test_profesional_no_defensor_no_otorga_ni_revoca_permiso(client, session_fac
         headers=h_psico,
     )
     assert r.status_code == 403
+
+
+def _escenario_defensor_y_madre(client, session_factory, sufijo):
+    """Menor asignado a un hogar con madre con cuenta y un defensor asignado."""
+    _, hogar_id = crear_zona_y_hogar(session_factory, f"Zona permisos {sufijo}")
+    h_admin = auth_header(client, session_factory, f"admin-perm-{sufijo}@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin).json()["id"]
+    uid_madre = crear_usuario(session_factory, f"madre-perm-{sufijo}@prueba.local", "madre")
+    vincular_hogar_madre(session_factory, hogar_id, crear_madre(session_factory, uid_madre, f"950-{sufijo}"))
+    client.post(
+        "/api/v1/asignaciones",
+        json={"menor_id": menor_id, "hogar_id": hogar_id, "fecha_inicio": "2026-01-01", "tipo_movimiento": "ingreso"},
+        headers=h_admin,
+    )
+    uid_defensor = crear_usuario(session_factory, f"defensor-perm-{sufijo}@prueba.local", "defensor")
+    asignar_profesional_a_menor(session_factory, menor_id, crear_profesional(session_factory, uid_defensor, "defensor"), "defensor")
+    h_defensor = {"Authorization": f"Bearer {login(client, f'defensor-perm-{sufijo}@prueba.local')}"}
+    return menor_id, uid_madre, h_defensor
+
+
+def test_permiso_sin_usuario_se_otorga_a_la_madre_del_hogar_vigente(client, session_factory):
+    menor_id, uid_madre, h_defensor = _escenario_defensor_y_madre(client, session_factory, "a")
+    r = client.post(f"/api/v1/menores/{menor_id}/permisos", json={"seccion": "salud"}, headers=h_defensor)
+    assert r.status_code == 201
+    assert r.json()["usuario_id"] == uid_madre
+
+
+def test_no_se_otorga_permiso_a_una_madre_de_otro_hogar(client, session_factory):
+    menor_id, _, h_defensor = _escenario_defensor_y_madre(client, session_factory, "b")
+    uid_otra = crear_usuario(session_factory, "madre-otra-b@prueba.local", "madre")
+    _, hogar_otro = crear_zona_y_hogar(session_factory, "Zona otra b")
+    vincular_hogar_madre(session_factory, hogar_otro, crear_madre(session_factory, uid_otra, "951-b"))
+    r = client.post(
+        f"/api/v1/menores/{menor_id}/permisos", json={"seccion": "salud", "usuario_id": uid_otra}, headers=h_defensor
+    )
+    assert r.status_code == 422
+
+
+def test_hogar_vigente_muestra_nombres_y_excluye_al_auditor(client, session_factory):
+    menor_id, uid_madre, h_defensor = _escenario_defensor_y_madre(client, session_factory, "c")
+    r = client.get(f"/api/v1/menores/{menor_id}/hogar-vigente", headers=h_defensor)
+    assert r.status_code == 200
+    assert r.json()["madre_nombre"]
+    assert r.json()["madre_usuario_id"] == uid_madre
+    assert r.json()["zona_nombre"] == "Zona permisos c"
+    h_auditor = auth_header(client, session_factory, "auditor-perm-c@prueba.local", "auditor")
+    assert client.get(f"/api/v1/menores/{menor_id}/hogar-vigente", headers=h_auditor).status_code == 403

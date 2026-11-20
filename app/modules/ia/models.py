@@ -84,6 +84,26 @@ class FragmentoDocumento(UuidPk, Base):
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class IaConfiguracion(UuidPk, Base):
+    """Configuración del proveedor de IA editable por el admin (ADR-0017). Una sola fila.
+
+    La clave de API se guarda cifrada con la clave maestra (`app/core/secretos.py`) y nunca se
+    devuelve por la API; `api_key_sufijo` (últimos 4 caracteres) permite reconocerla en pantalla.
+    Si no hay fila o no tiene clave, se usa la del entorno (`ANTHROPIC_API_KEY`/`GROQ_API_KEY`).
+    """
+
+    __tablename__ = "ia_configuracion"
+
+    proveedor: Mapped[str] = mapped_column(String(50))
+    modelo: Mapped[str] = mapped_column(String(100))
+    api_key_cifrada: Mapped[str | None] = mapped_column(Text, nullable=True)
+    api_key_sufijo: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    actualizado_por: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("usuarios.id"), nullable=True)
+    actualizado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 class IaConsulta(UuidPk, Base):
     __tablename__ = "ia_consultas"
 

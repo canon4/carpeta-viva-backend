@@ -109,14 +109,50 @@ class GroqProveedorLLM(ProveedorLLM):
         return RespuestaLLM(texto=texto, modelo=self.modelo, proveedor=self.nombre)
 
 
-def construir_proveedor_llm(proveedor: str, modelo: str) -> ProveedorLLM:
+PROVEEDORES_SOPORTADOS = ("anthropic", "groq")
+
+
+def construir_proveedor_llm(proveedor: str, modelo: str, api_key: str | None = None) -> ProveedorLLM:
     """Fábrica por nombre de proveedor (configuración). Agregar un proveedor nuevo es agregar
-    una rama aquí y una clase nueva, sin tocar `ia.application`."""
+    una rama aquí y una clase nueva, sin tocar `ia.application`. `api_key` explícita (la que el
+    admin guardó en el panel, ADR-0017) tiene prioridad sobre la del entorno."""
     if proveedor == "anthropic":
-        return AnthropicProveedorLLM(modelo=modelo, api_key=get_settings().anthropic_api_key)
+        return AnthropicProveedorLLM(modelo=modelo, api_key=api_key or get_settings().anthropic_api_key)
     if proveedor == "groq":
-        return GroqProveedorLLM(modelo=modelo, api_key=get_settings().groq_api_key)
+        return GroqProveedorLLM(modelo=modelo, api_key=api_key or get_settings().groq_api_key)
     raise ValueError(f"Proveedor de LLM no soportado: {proveedor!r}")
+
+
+def listar_modelos(proveedor: str, api_key: str | None) -> list[str]:
+    """Modelos que la cuenta de esa clave puede usar, según el propio proveedor. Evita escribir a
+    mano un nombre de modelo que no existe o al que la cuenta no tiene acceso (ADR-0017)."""
+    clave = api_key or (get_settings().anthropic_api_key if proveedor == "anthropic" else get_settings().groq_api_key)
+    if not clave:
+        raise ProveedorLLMNoDisponible("No hay clave de API para consultar los modelos de este proveedor")
+    try:
+        if proveedor == "anthropic":
+            import anthropic
+
+            modelos = [m.id for m in anthropic.Anthropic(api_key=clave).models.list(limit=100)]
+        elif proveedor == "groq":
+            import groq
+
+            # Groq también lista modelos de voz y de moderación: solo sirven los de chat.
+            excluir = ("whisper", "tts", "guard", "playai", "distil", "orpheus")
+            modelos = [
+                m.id
+                for m in groq.Groq(api_key=clave).models.list().data
+                if getattr(m, "active", True) and not any(x in m.id.lower() for x in excluir)
+            ]
+        else:
+            raise ValueError(f"Proveedor de LLM no soportado: {proveedor!r}")
+    except ImportError as exc:
+        raise ProveedorLLMNoDisponible(f"El paquete '{proveedor}' no está instalado") from exc
+    except ValueError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - red o API: se informa como no disponible
+        raise ProveedorLLMNoDisponible(f"No se pudo consultar la lista de modelos: {exc}") from exc
+    return sorted(set(modelos))
 
 
 @lru_cache

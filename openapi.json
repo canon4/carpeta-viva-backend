@@ -1572,6 +1572,62 @@
         }
       }
     },
+    "/api/v1/menores/{menor_id}/hogar-vigente": {
+      "get": {
+        "tags": [
+          "Menores y Expedientes"
+        ],
+        "summary": "Hogar, zona y madre actuales del menor (null si no tiene asignación vigente)",
+        "operationId": "hogar_vigente_endpoint_api_v1_menores__menor_id__hogar_vigente_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "menor_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Menor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/HogarVigenteOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Hogar Vigente Endpoint Api V1 Menores  Menor Id  Hogar Vigente Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/menores/{menor_id}/permisos": {
       "get": {
         "tags": [
@@ -5844,6 +5900,156 @@
         ]
       }
     },
+    "/api/v1/ia/configuracion": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Proveedor, modelo y estado de la clave de API (admin; la clave nunca se devuelve)",
+        "operationId": "obtener_configuracion_endpoint_api_v1_ia_configuracion_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IaConfiguracionOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Cambia proveedor, modelo o clave de API (admin; la clave se guarda cifrada)",
+        "operationId": "actualizar_configuracion_endpoint_api_v1_ia_configuracion_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IaConfiguracionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IaConfiguracionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ia/configuracion/modelos": {
+      "get": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Modelos que la cuenta puede usar, consultados al proveedor (admin)",
+        "operationId": "listar_modelos_endpoint_api_v1_ia_configuracion_modelos_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proveedor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Proveedor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IaModelosOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ia/configuracion/probar": {
+      "post": {
+        "tags": [
+          "Asistente de IA"
+        ],
+        "summary": "Prueba la conexión con el proveedor configurado, sin datos de expedientes (admin)",
+        "operationId": "probar_configuracion_endpoint_api_v1_ia_configuracion_probar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IaPruebaOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ia/consultas": {
       "get": {
         "tags": [
@@ -9391,6 +9597,209 @@
         "type": "object",
         "title": "HogarUpdate"
       },
+      "HogarVigenteOut": {
+        "properties": {
+          "hogar_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hogar Id"
+          },
+          "zona_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zona Nombre"
+          },
+          "fecha_inicio": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha Inicio"
+          },
+          "madre_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Madre Nombre"
+          },
+          "madre_usuario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Madre Usuario Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hogar_id",
+          "fecha_inicio"
+        ],
+        "title": "HogarVigenteOut",
+        "description": "Hogar y madre actuales del menor, con nombres legibles para el expediente."
+      },
+      "IaConfiguracionOut": {
+        "properties": {
+          "proveedor": {
+            "type": "string",
+            "title": "Proveedor"
+          },
+          "modelo": {
+            "type": "string",
+            "title": "Modelo"
+          },
+          "clave_origen": {
+            "type": "string",
+            "title": "Clave Origen"
+          },
+          "clave_sufijo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clave Sufijo"
+          },
+          "actualizado_en": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actualizado En"
+          },
+          "proveedores_disponibles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Proveedores Disponibles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "proveedor",
+          "modelo",
+          "clave_origen",
+          "proveedores_disponibles"
+        ],
+        "title": "IaConfiguracionOut",
+        "description": "Nunca incluye la clave: solo si existe, de dónde viene y sus últimos caracteres."
+      },
+      "IaConfiguracionUpdate": {
+        "properties": {
+          "proveedor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proveedor"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "title": "IaConfiguracionUpdate"
+      },
+      "IaModelosOut": {
+        "properties": {
+          "proveedor": {
+            "type": "string",
+            "title": "Proveedor"
+          },
+          "modelos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Modelos"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "proveedor",
+          "modelos"
+        ],
+        "title": "IaModelosOut"
+      },
+      "IaPruebaOut": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "mensaje": {
+            "type": "string",
+            "title": "Mensaje"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "mensaje"
+        ],
+        "title": "IaPruebaOut"
+      },
       "InformeGeneradoOut": {
         "properties": {
           "id": {
@@ -10335,8 +10744,15 @@
             "$ref": "#/components/schemas/SeccionSensible"
           },
           "usuario_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Usuario Id"
           },
           "notas": {
@@ -10354,8 +10770,7 @@
         },
         "type": "object",
         "required": [
-          "seccion",
-          "usuario_id"
+          "seccion"
         ],
         "title": "PermisoCreate"
       },

@@ -97,6 +97,35 @@ class EstadoIaOut(BaseModel):
     indexar_automaticamente: bool
 
 
+class IaConfiguracionOut(BaseModel):
+    """Nunca incluye la clave: solo si existe, de dónde viene y sus últimos caracteres."""
+
+    proveedor: str
+    modelo: str
+    clave_origen: str  # "panel" | "entorno" | "ninguna"
+    clave_sufijo: str | None = None
+    actualizado_en: datetime | None = None
+    proveedores_disponibles: list[str]
+
+
+class IaConfiguracionUpdate(BaseModel):
+    proveedor: str | None = Field(default=None, max_length=50)
+    modelo: str | None = Field(default=None, min_length=1, max_length=100)
+    # Solo escritura. Vacío ("") borra la clave del panel y vuelve a la del entorno.
+    api_key: str | None = Field(default=None, max_length=300)
+
+
+class IaModelosOut(BaseModel):
+    proveedor: str
+    modelos: list[str]
+    error: str | None = None
+
+
+class IaPruebaOut(BaseModel):
+    ok: bool
+    mensaje: str
+
+
 class ReindexarPendientesOut(BaseModel):
     documentos_reindexados: int
     reportes_reindexados: int

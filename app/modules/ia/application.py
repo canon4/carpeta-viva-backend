@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from app.core.audit import registrar_acceso
 from app.core.config import get_settings
 from app.core.errors import no_encontrado, prohibido
-from app.core.ia_llm import ProveedorLLM, ProveedorLLMNoDisponible, obtener_proveedor_llm
+from app.core.ia_llm import ProveedorLLM, ProveedorLLMNoDisponible
 from app.modules.auth.domain import Rol
 
 from . import ocr
@@ -241,15 +241,15 @@ def _generar_respuesta_con_citas(
     mapa_patrones.update(mapa_pp)
 
     instrucciones = INSTRUCCIONES_SISTEMA_BASE + (f" {instrucciones_extra}" if instrucciones_extra else "")
-    settings = get_settings()
-    proveedor = proveedor_llm or obtener_proveedor_llm()
+    proveedor = proveedor_llm or proveedor_activo(session)
     try:
         resultado = proveedor.generar(pregunta_final, contexto=contexto, instrucciones_sistema=instrucciones)
         texto_respuesta = restituir(resultado.texto, mapa_nombres, mapa_patrones)
         modelo, nombre_proveedor = resultado.modelo, resultado.proveedor
     except ProveedorLLMNoDisponible as exc:
         texto_respuesta = f"No se pudo generar la respuesta: el proveedor de IA no está disponible ({exc})."
-        modelo, nombre_proveedor = settings.ia_llm_modelo, settings.ia_llm_proveedor
+        activo = _configuracion_activa(session)
+        modelo, nombre_proveedor = activo[1], activo[0]
 
     return texto_respuesta, fragmentos_usados, citas, modelo, nombre_proveedor
 
@@ -726,17 +726,168 @@ def evaluar_documento_faltante(session: Session, *, plazo_dias: int = PLAZO_INFO
 # Estado del módulo (admin) — sección 1.9
 # ---------------------------------------------------------------------------
 
-def estado(usuario) -> dict:
+def estado(usuario, session: Session | None = None) -> dict:
     from .domain import SEUDONIMIZACION_COBERTURA
 
     if usuario.rol != Rol.ADMIN.value:
         raise prohibido()
     settings = get_settings()
+    proveedor, modelo = (
+        _configuracion_activa(session)[:2] if session is not None else (settings.ia_llm_proveedor, settings.ia_llm_modelo)
+    )
     return {
-        "proveedor_llm": settings.ia_llm_proveedor,
-        "modelo_llm": settings.ia_llm_modelo,
+        "proveedor_llm": proveedor,
+        "modelo_llm": modelo,
         "embeddings_modelo": identificador_modelo(),
         "anonimizado_por_defecto": settings.ia_anonimizado_por_defecto,
         "seudonimizacion_cobertura": SEUDONIMIZACION_COBERTURA,
         "indexar_automaticamente": settings.ia_indexar_automaticamente,
     }
+
+
+# ---------------------------------------------------------------------------
+# Configuración del proveedor editable por el admin (ADR-0017)
+# ---------------------------------------------------------------------------
+
+def _fila_configuracion(session: Session):
+    from sqlalchemy import select
+
+    from .models import IaConfiguracion
+
+    return session.scalars(select(IaConfiguracion).limit(1)).first()
+
+
+def _configuracion_activa(session: Session) -> tuple[str, str, str | None, str]:
+    """(proveedor, modelo, clave en claro o None, origen de la clave). El panel tiene prioridad
+    sobre el entorno; si la clave del panel no se puede descifrar, se ignora (y se usa el entorno)."""
+    from app.core.secretos import SecretoIlegible, descifrar
+
+    settings = get_settings()
+    fila = _fila_configuracion(session)
+    proveedor = fila.proveedor if fila else settings.ia_llm_proveedor
+    modelo = fila.modelo if fila else settings.ia_llm_modelo
+    if fila and fila.api_key_cifrada:
+        try:
+            return proveedor, modelo, descifrar(fila.api_key_cifrada), "panel"
+        except SecretoIlegible:
+            pass
+    clave_entorno = settings.anthropic_api_key if proveedor == "anthropic" else settings.groq_api_key
+    return proveedor, modelo, None, "entorno" if clave_entorno else "ninguna"
+
+
+def proveedor_activo(session: Session) -> ProveedorLLM:
+    """Proveedor con la configuración vigente (panel o entorno). Se lee en cada llamada: un cambio
+    del admin aplica de inmediato, sin reiniciar el servidor."""
+    from app.core.ia_llm import construir_proveedor_llm
+
+    proveedor, modelo, clave, _ = _configuracion_activa(session)
+    return construir_proveedor_llm(proveedor, modelo, api_key=clave)
+
+
+def _exigir_admin(session: Session, usuario, accion: str) -> None:
+    if usuario.rol != Rol.ADMIN.value:
+        registrar_acceso(session, accion=f"{accion}_denegada", usuario_id=usuario.id)
+        raise prohibido()
+
+
+def obtener_configuracion(session: Session, usuario) -> dict:
+    from app.core.ia_llm import PROVEEDORES_SOPORTADOS
+
+    _exigir_admin(session, usuario, "ia_configuracion_consulta")
+    proveedor, modelo, _, origen = _configuracion_activa(session)
+    fila = _fila_configuracion(session)
+    return {
+        "proveedor": proveedor,
+        "modelo": modelo,
+        "clave_origen": origen,
+        "clave_sufijo": fila.api_key_sufijo if fila and origen == "panel" else None,
+        "actualizado_en": fila.actualizado_en if fila else None,
+        "proveedores_disponibles": list(PROVEEDORES_SOPORTADOS),
+    }
+
+
+def actualizar_configuracion(session: Session, usuario, datos) -> dict:
+    """Guarda proveedor, modelo y, si se envía, la clave cifrada. La clave nunca se registra en
+    auditoría ni se devuelve; solo queda constancia de que cambió."""
+    from app.core.ia_llm import PROVEEDORES_SOPORTADOS
+    from app.core.secretos import cifrar
+
+    from .models import IaConfiguracion
+
+    _exigir_admin(session, usuario, "ia_configuracion_cambio")
+    settings = get_settings()
+    fila = _fila_configuracion(session)
+    if fila is None:
+        fila = IaConfiguracion(proveedor=settings.ia_llm_proveedor, modelo=settings.ia_llm_modelo)
+        session.add(fila)
+
+    if datos.proveedor is not None:
+        if datos.proveedor not in PROVEEDORES_SOPORTADOS:
+            raise ValueError(f"Proveedor no soportado. Use uno de: {', '.join(PROVEEDORES_SOPORTADOS)}")
+        if datos.proveedor != fila.proveedor and datos.api_key is None:
+            # Una clave es de un proveedor: al cambiar de proveedor sin enviar clave, se descarta.
+            fila.api_key_cifrada = None
+            fila.api_key_sufijo = None
+        fila.proveedor = datos.proveedor
+    if datos.modelo is not None:
+        fila.modelo = datos.modelo.strip()
+
+    cambio_clave = "sin_cambio"
+    if datos.api_key is not None:
+        clave = datos.api_key.strip()
+        if clave == "":
+            fila.api_key_cifrada = None
+            fila.api_key_sufijo = None
+            cambio_clave = "borrada"
+        else:
+            if len(clave) < 20 or any(c.isspace() for c in clave):
+                raise ValueError("La clave de API no parece válida: revise que la copió completa y sin espacios")
+            fila.api_key_cifrada = cifrar(clave)
+            fila.api_key_sufijo = clave[-4:]
+            cambio_clave = "reemplazada"
+
+    fila.actualizado_por = usuario.id
+    session.commit()
+    registrar_acceso(
+        session,
+        # `accion` admite 60 caracteres: el detalle (con nombres de modelo largos) va en `recurso`.
+        accion="ia_configuracion_actualizada",
+        recurso=f"{fila.proveedor}:{fila.modelo}:clave_{cambio_clave}"[:255],
+        usuario_id=usuario.id,
+    )
+    return obtener_configuracion(session, usuario)
+
+
+def probar_configuracion(session: Session, usuario) -> dict:
+    """Llamada mínima al proveedor con la configuración vigente, sin datos de expedientes."""
+    _exigir_admin(session, usuario, "ia_configuracion_prueba")
+    proveedor = proveedor_activo(session)
+    try:
+        proveedor.generar(
+            "Responda solo con la palabra: listo",
+            contexto="(prueba de conexión, sin datos)",
+            instrucciones_sistema="Es una prueba de conexión. Responda en una palabra.",
+        )
+        ok, mensaje = True, f"Conexión correcta con {proveedor.nombre}."
+    except ProveedorLLMNoDisponible as exc:
+        # El mensaje del proveedor puede incluir detalles técnicos, nunca la clave.
+        ok, mensaje = False, str(exc)
+    registrar_acceso(session, accion=f"ia_configuracion_probada:{'ok' if ok else 'error'}", usuario_id=usuario.id)
+    return {"ok": ok, "mensaje": mensaje}
+
+
+def listar_modelos_disponibles(session: Session, usuario, proveedor: str | None = None) -> dict:
+    """Modelos de la cuenta para el proveedor indicado (o el activo). Usa la clave guardada en el
+    panel si es de ese proveedor; si no, la del entorno. No envía datos de expedientes."""
+    from app.core.ia_llm import PROVEEDORES_SOPORTADOS, listar_modelos
+
+    _exigir_admin(session, usuario, "ia_modelos_consulta")
+    activo_proveedor, _, clave, _ = _configuracion_activa(session)
+    proveedor = proveedor or activo_proveedor
+    if proveedor not in PROVEEDORES_SOPORTADOS:
+        raise ValueError(f"Proveedor no soportado. Use uno de: {', '.join(PROVEEDORES_SOPORTADOS)}")
+    clave_del_proveedor = clave if proveedor == activo_proveedor else None
+    try:
+        return {"proveedor": proveedor, "modelos": listar_modelos(proveedor, clave_del_proveedor), "error": None}
+    except ProveedorLLMNoDisponible as exc:
+        return {"proveedor": proveedor, "modelos": [], "error": str(exc)}

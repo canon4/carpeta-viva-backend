@@ -88,8 +88,19 @@ class FamiliarOut(BaseModel):
 
 class PermisoCreate(BaseModel):
     seccion: SeccionSensible
-    usuario_id: uuid.UUID
+    # Opcional: si no se envía, se usa la madre del hogar vigente del menor (la única válida).
+    usuario_id: uuid.UUID | None = None
     notas: str | None = Field(default=None, max_length=255)
+
+
+class HogarVigenteOut(BaseModel):
+    """Hogar y madre actuales del menor, con nombres legibles para el expediente."""
+
+    hogar_id: uuid.UUID
+    zona_nombre: str | None = None
+    fecha_inicio: date
+    madre_nombre: str | None = None
+    madre_usuario_id: uuid.UUID | None = None
 
 
 class PermisoOut(BaseModel):

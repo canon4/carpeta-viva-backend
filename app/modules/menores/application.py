@@ -22,7 +22,15 @@ from .repository import (
     MenorRepository,
     PermisoExpedienteRepository,
 )
-from .schemas import FamiliarCreate, HogarPanelGroup, MenorCreate, MenorUpdate, PermisoCreate, ZonaPanelGroup
+from .schemas import (
+    FamiliarCreate,
+    HogarPanelGroup,
+    HogarVigenteOut,
+    MenorCreate,
+    MenorUpdate,
+    PermisoCreate,
+    ZonaPanelGroup,
+)
 
 
 def _menor_o_404(session: Session, menor_id: uuid.UUID) -> Menor:
@@ -396,6 +404,38 @@ def listar_permisos(session: Session, usuario, menor_id: uuid.UUID) -> list[Perm
     return PermisoExpedienteRepository(session).listar_por_menor(menor.id)
 
 
+def _hogar_vigente(session: Session, menor_id: uuid.UUID) -> HogarVigenteOut | None:
+    """Hogar, zona y madre de la asignación vigente del menor, o None si no tiene."""
+    from app.modules.asignaciones.application import vigente_de_menor
+    from app.modules.madres.application import obtener_madre
+    from app.modules.zonas_hogares.application import obtener_hogar, obtener_zona
+
+    vigente = vigente_de_menor(session, menor_id)
+    if vigente is None:
+        return None
+    hogar = obtener_hogar(session, vigente.hogar_id)
+    zona = obtener_zona(session, hogar.zona_id)
+    madre = obtener_madre(session, hogar.madre_id) if hogar.madre_id else None
+    return HogarVigenteOut(
+        hogar_id=hogar.id,
+        zona_nombre=zona.nombre,
+        fecha_inicio=vigente.fecha_inicio,
+        madre_nombre=f"{madre.nombres} {madre.apellidos}" if madre else None,
+        madre_usuario_id=madre.usuario_id if madre else None,
+    )
+
+
+def hogar_vigente(session: Session, usuario, menor_id: uuid.UUID) -> HogarVigenteOut | None:
+    """Para el expediente: muestra hogar y madre por nombre en lugar de identificadores. Mismo
+    alcance que ver el menor; el auditor queda fuera (solo ve datos minimizados, supuesto S17)."""
+    menor = _menor_o_404(session, menor_id)
+    if usuario.rol == Rol.AUDITOR.value or not _puede_ver_menor(session, usuario, menor):
+        registrar_acceso(session, accion="hogar_vigente_denegado", usuario_id=usuario.id, menor_id=menor.id)
+        raise prohibido()
+    registrar_acceso(session, accion="hogar_vigente_consultado", usuario_id=usuario.id, menor_id=menor.id)
+    return _hogar_vigente(session, menor.id)
+
+
 def crear_permiso(session: Session, usuario, menor_id: uuid.UUID, datos: PermisoCreate) -> PermisoExpediente:
     """Solo el profesional con cargo=defensor asignado a ese menor puede otorgar permisos (ADR-0007, punto 5)."""
     menor = _menor_o_404(session, menor_id)
@@ -412,12 +452,21 @@ def crear_permiso(session: Session, usuario, menor_id: uuid.UUID, datos: Permiso
         )
         raise prohibido("Solo el defensor asignado a este menor puede otorgar este permiso")
 
-    destinatario = UsuarioRepository(session).por_id(datos.usuario_id)
+    # El permiso solo tiene sentido para la madre del hogar vigente: a otra madre no le serviría
+    # (no ve al menor) y otorgárselo dejaría un permiso latente si el menor llegara a su hogar.
+    vigente = _hogar_vigente(session, menor.id)
+    madre_usuario_id = vigente.madre_usuario_id if vigente else None
+    if madre_usuario_id is None:
+        raise ValueError("El menor no tiene una madre con cuenta en su hogar actual")
+    usuario_destino = datos.usuario_id or madre_usuario_id
+    if usuario_destino != madre_usuario_id:
+        raise ValueError("El permiso solo puede otorgarse a la madre del hogar actual del menor")
+    destinatario = UsuarioRepository(session).por_id(usuario_destino)
     if destinatario is None or destinatario.rol != Rol.MADRE.value:
         raise ValueError("El permiso solo puede otorgarse a un usuario con rol madre")
 
     repo = PermisoExpedienteRepository(session)
-    existente = repo.buscar(menor.id, datos.seccion.value, datos.usuario_id)
+    existente = repo.buscar(menor.id, datos.seccion.value, usuario_destino)
     if existente is not None:
         existente.activo = True
         existente.notas = datos.notas
@@ -428,7 +477,7 @@ def crear_permiso(session: Session, usuario, menor_id: uuid.UUID, datos: Permiso
             PermisoExpediente(
                 menor_id=menor.id,
                 seccion=datos.seccion.value,
-                usuario_id=datos.usuario_id,
+                usuario_id=usuario_destino,
                 otorgado_por=usuario.id,
                 notas=datos.notas,
             )
