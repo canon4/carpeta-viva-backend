@@ -9,6 +9,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 MENSAJE_ACCESO_REVOCADO = "[contenido ya no accesible: el permiso sobre este expediente fue revocado]"
 MENSAJE_SIN_RESULTADO = "No encontré información en los documentos/reportes a los que tiene acceso."
+# Regla del chat: sin un menor (o un hogar) elegido, no se busca a ciegas entre todos los
+# expedientes a los que el usuario tiene acceso (mezclaría datos de varios NNA en una sola
+# respuesta). Se pide identificar al menor antes de buscar, en vez de responder.
+MENSAJE_PIDE_IDENTIFICACION = (
+    "Para buscar en los expedientes necesito saber de qué niño, niña o adolescente se trata. "
+    "Indíqueme su nombre completo o número de identificación, o elíjalo en el selector "
+    '"Sobre" antes de preguntar.'
+)
 
 
 class CitaOut(BaseModel):

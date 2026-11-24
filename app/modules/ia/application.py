@@ -44,6 +44,7 @@ from .schemas import (
     ConsultaMetadatosOut,
     ConsultaOut,
     MENSAJE_ACCESO_REVOCADO,
+    MENSAJE_PIDE_IDENTIFICACION,
     MENSAJE_SIN_RESULTADO,
     RedaccionApoyoCreate,
     RedaccionApoyoOut,
@@ -264,8 +265,32 @@ def consultar(session: Session, usuario, datos: ConsultaCreate, *, proveedor_llm
         raise prohibido()
 
     t0 = time.monotonic()
-    permitidos = _candidatos_permitidos(session, usuario, datos.menor_id, datos.hogar_id)
     settings = get_settings()
+
+    if datos.menor_id is None and datos.hogar_id is None:
+        # Regla del chat: sin menor ni hogar elegido no se busca entre todos los expedientes a
+        # la vez (mezclaría datos de varios NNA en una sola respuesta) — se pide identificar al
+        # menor antes de buscar.
+        duracion_ms = int((time.monotonic() - t0) * 1000)
+        consulta = IaConsultaRepository(session).crear(
+            IaConsulta(
+                usuario_id=usuario.id,
+                pregunta=datos.pregunta,
+                menor_id=None,
+                hogar_id=None,
+                fragmentos_usados=[],
+                respuesta=MENSAJE_PIDE_IDENTIFICACION,
+                modelo="n/a",
+                proveedor="n/a",
+                anonimizado=settings.ia_anonimizado_por_defecto,
+                sin_resultado=True,
+                duracion_ms=duracion_ms,
+            )
+        )
+        registrar_acceso(session, accion="ia_consulta_requiere_identificacion", usuario_id=usuario.id)
+        return consulta
+
+    permitidos = _candidatos_permitidos(session, usuario, datos.menor_id, datos.hogar_id)
 
     if not permitidos:
         duracion_ms = int((time.monotonic() - t0) * 1000)

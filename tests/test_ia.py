@@ -16,7 +16,7 @@ import uuid
 from app.core.ia_llm import ProveedorLLM, RespuestaLLM
 from app.modules.auth.models import Usuario
 from app.modules.ia.application import consultar
-from app.modules.ia.schemas import ConsultaCreate
+from app.modules.ia.schemas import MENSAJE_PIDE_IDENTIFICACION, ConsultaCreate
 
 from ._helpers import (
     asignar_profesional_a_menor,
@@ -188,6 +188,52 @@ def test_sin_fragmentos_no_llama_al_proveedor_llm_pero_si_llama_cuando_hay_fuent
         )
         assert consulta.sin_resultado is False
         assert len(consulta.fragmentos_usados) >= 1
+    assert fake2.llamadas == 1
+
+
+# ---------------------------------------------------------------------------
+# Sin menor ni hogar elegido, se pide identificar al menor antes de buscar
+# ---------------------------------------------------------------------------
+
+def test_sin_menor_ni_hogar_pide_identificacion_y_no_llama_al_proveedor_llm(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory)
+    h_admin = auth_header(client, session_factory, "admin_ia4@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin, "Menor IA4")
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+
+    uid_prof = crear_usuario(session_factory, "prof_ia4@prueba.local", "profesional")
+    prof_id = crear_profesional(session_factory, uid_prof, "trabajo_social")
+    asignar_profesional_a_menor(session_factory, menor_id, prof_id, "trabajo_social")
+    h_prof = {"Authorization": f"Bearer {login(client, 'prof_ia4@prueba.local')}"}
+
+    r = subir_documento_texto(client, h_prof, menor_id, "El menor asiste a controles médicos regulares.")
+    assert r.status_code == 201, r.text
+
+    usuario_prof = _usuario_por_email(session_factory, "prof_ia4@prueba.local")
+
+    # Sin menor_id ni hogar_id: aunque haya fragmentos permitidos para este profesional, no se
+    # busca entre todos a la vez (mezclaría datos de varios NNA) — se pide identificar al menor,
+    # sin llamar al proveedor de LLM.
+    fake = ProveedorLLMFalso()
+    with session_factory() as session:
+        consulta = consultar(
+            session, usuario_prof, ConsultaCreate(pregunta="¿Cómo va el menor?"), proveedor_llm=fake
+        )
+        assert consulta.sin_resultado is True
+        assert consulta.respuesta == MENSAJE_PIDE_IDENTIFICACION
+        assert consulta.fragmentos_usados == []
+    assert fake.llamadas == 0
+
+    # Con el menor identificado, la consulta sí busca y responde con fuente.
+    fake2 = ProveedorLLMFalso()
+    with session_factory() as session:
+        consulta = consultar(
+            session,
+            usuario_prof,
+            ConsultaCreate(pregunta="¿Cómo va el menor?", menor_id=uuid.UUID(menor_id)),
+            proveedor_llm=fake2,
+        )
+        assert consulta.sin_resultado is False
     assert fake2.llamadas == 1
 
 
