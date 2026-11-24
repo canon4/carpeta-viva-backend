@@ -11,7 +11,7 @@ from app.core.errors import no_encontrado
 
 from .models import MenorProfesional, Profesional
 from .repository import MenorProfesionalRepository, ProfesionalRepository
-from .schemas import ProfesionalCreate, ProfesionalUpdate
+from .schemas import ProfesionalAutoUpdate, ProfesionalCreate, ProfesionalUpdate
 
 
 def crear_profesional(session: Session, datos: ProfesionalCreate, usuario_id: uuid.UUID) -> Profesional:
@@ -64,6 +64,27 @@ def actualizar_profesional(
 def profesional_de_usuario(session: Session, usuario_id: uuid.UUID) -> Profesional | None:
     """Perfil de profesional asociado a un usuario autenticado, si existe."""
     return ProfesionalRepository(session).por_usuario_id(usuario_id)
+
+
+def obtener_mi_perfil(session: Session, usuario_id: uuid.UUID) -> Profesional:
+    """Perfil propio del profesional/defensor autenticado (ADR-0019, sección 4)."""
+    profesional = profesional_de_usuario(session, usuario_id)
+    if profesional is None:
+        raise no_encontrado("No hay perfil de profesional asociado a este usuario")
+    return profesional
+
+
+def actualizar_mi_perfil(session: Session, usuario_id: uuid.UUID, datos: ProfesionalAutoUpdate) -> Profesional:
+    """El profesional/defensor edita sus propios datos de contacto: solo
+    `telefono`/`especialidad`, nunca identidad ni rol profesional."""
+    profesional = obtener_mi_perfil(session, usuario_id)
+    if datos.telefono is not None:
+        profesional.telefono = datos.telefono
+    if datos.especialidad is not None:
+        profesional.especialidad = datos.especialidad
+    profesional = ProfesionalRepository(session).guardar(profesional)
+    registrar_acceso(session, accion="profesional_autoactualizado", usuario_id=usuario_id, recurso=str(profesional.id))
+    return profesional
 
 
 def esta_asignado_a_menor(session: Session, profesional_id: uuid.UUID, menor_id: uuid.UUID) -> bool:

@@ -5,7 +5,7 @@ Camas, muebles, personas que viven y red de apoyo.
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 # ---------------------------------------------------------------------------
@@ -129,3 +129,11 @@ class RedApoyoOut(BaseModel):
     activo: bool
     created_at: datetime
     updated_at: datetime
+    # ADR-0019, sección 5: `foto_ref` nunca se expone (ruta de archivo cifrado interna); solo se
+    # informa si hay foto cargada. El contenido se consulta en `GET /inventario/red-apoyo/{id}/foto`.
+    foto_ref: str | None = Field(default=None, exclude=True, repr=False)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def tiene_foto(self) -> bool:
+        return bool(self.foto_ref)

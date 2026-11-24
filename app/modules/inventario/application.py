@@ -354,3 +354,41 @@ def actualizar_red_apoyo(session: Session, usuario, contacto_id: uuid.UUID, dato
     contacto = HogarRedApoyoRepository(session).guardar(contacto)
     registrar_acceso(session, accion="red_apoyo_actualizada", usuario_id=usuario.id, recurso=str(contacto.id))
     return contacto
+
+
+def subir_foto_red_apoyo(session: Session, usuario, contacto_id: uuid.UUID, contenido: bytes) -> HogarRedApoyo:
+    """Foto de perfil del contacto (ADR-0019, sección 5): una sola, se reemplaza, sin historial.
+    Mismo permiso que el resto de gestión de red de apoyo (`puede_gestionar_hogar`)."""
+    contacto = _red_apoyo_o_404(session, contacto_id)
+    if not puede_gestionar_hogar(session, usuario, contacto.hogar_id):
+        registrar_acceso(session, accion="red_apoyo_foto_subida_denegada", usuario_id=usuario.id, recurso=str(contacto.id))
+        raise prohibido()
+    if len(contenido) == 0:
+        raise ValueError("La foto está vacía")
+    mime_type = detectar_tipo(contenido)
+    if mime_type not in MIME_FOTOS_PERMITIDOS:
+        raise ValueError("Tipo de imagen no permitido; use JPEG, PNG o WEBP")
+    if len(contenido) > FOTO_TAMANIO_MAXIMO_BYTES:
+        raise ValueError(f"La foto supera el tamaño máximo permitido ({FOTO_TAMANIO_MAXIMO_BYTES // (1024 * 1024)} MB)")
+
+    if contacto.foto_ref:
+        almacenamiento.sobrescribir(contacto.foto_ref, contenido)
+    else:
+        referencia, _hash = almacenamiento.guardar(contacto.hogar_id, contacto.id, 1, contenido)
+        contacto.foto_ref = referencia
+    contacto = HogarRedApoyoRepository(session).guardar(contacto)
+    registrar_acceso(session, accion="red_apoyo_foto_subida", usuario_id=usuario.id, recurso=str(contacto.id))
+    return contacto
+
+
+def obtener_foto_red_apoyo(session: Session, usuario, contacto_id: uuid.UUID) -> bytes:
+    """Mismo permiso de lectura que el resto de red de apoyo (`puede_ver_hogar`)."""
+    contacto = _red_apoyo_o_404(session, contacto_id)
+    if not puede_ver_hogar(session, usuario, contacto.hogar_id):
+        registrar_acceso(session, accion="red_apoyo_foto_consulta_denegada", usuario_id=usuario.id, recurso=str(contacto.id))
+        raise prohibido()
+    if not contacto.foto_ref:
+        raise no_encontrado("El contacto no tiene foto de perfil cargada")
+    contenido = almacenamiento.leer(contacto.foto_ref)
+    registrar_acceso(session, accion="red_apoyo_foto_consultada", usuario_id=usuario.id, recurso=str(contacto.id))
+    return contenido

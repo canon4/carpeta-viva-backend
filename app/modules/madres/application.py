@@ -11,7 +11,7 @@ from app.core.errors import no_encontrado, prohibido
 
 from .models import MadreSustituta
 from .repository import MadreRepository
-from .schemas import MadreCreate, MadreOut, MadreUpdate
+from .schemas import MadreAutoUpdate, MadreCreate, MadreOut, MadreUpdate
 
 
 def crear_madre(session: Session, datos: MadreCreate, usuario_id: uuid.UUID) -> MadreSustituta:
@@ -89,6 +89,19 @@ def obtener_mi_perfil_con_hogar(session: Session, usuario_id: uuid.UUID) -> Madr
 def madre_de_usuario(session: Session, usuario_id: uuid.UUID) -> MadreSustituta | None:
     """Perfil de madre sustituta asociado a un usuario autenticado, si existe (no lanza error)."""
     return MadreRepository(session).por_usuario_id(usuario_id)
+
+
+def actualizar_mi_perfil(session: Session, usuario_id: uuid.UUID, datos: MadreAutoUpdate) -> MadreSustituta:
+    """La madre actualiza sus propios datos básicos (ADR-0019, sección 3): solo
+    dirección/teléfono, nunca `estado_certificacion` ni identidad legal."""
+    madre = obtener_mi_perfil(session, usuario_id)
+    if datos.direccion is not None:
+        madre.direccion = datos.direccion
+    if datos.telefono is not None:
+        madre.telefono = datos.telefono
+    madre = MadreRepository(session).guardar(madre)
+    registrar_acceso(session, accion="madre_autoactualizada", usuario_id=usuario_id, recurso=str(madre.id))
+    return madre
 
 
 def actualizar_mi_firma(session: Session, usuario_id: uuid.UUID, firma_ref: str) -> MadreSustituta:

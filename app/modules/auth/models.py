@@ -20,3 +20,8 @@ class Usuario(UuidPk, Timestamps, Base):
     bloqueado_hasta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Tokens emitidos antes de este momento dejan de valer (cambio de contraseña).
     credenciales_cambiadas_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # ADR-0019: nombre para roles sin tabla propia (coordinador/admin/auditor) y foto de perfil
+    # genérica para los 6 roles. Columnas nulas, sin dato que migrar.
+    nombres: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    apellidos: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    foto_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)

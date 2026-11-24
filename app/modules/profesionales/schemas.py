@@ -26,6 +26,15 @@ class ProfesionalUpdate(BaseModel):
     telefono: str | None = Field(default=None, max_length=30)
 
 
+class ProfesionalAutoUpdate(BaseModel):
+    """El profesional/defensor edita sus propios datos de contacto (ADR-0019, sección 4).
+    Deliberadamente sin `nombres`/`apellidos`/`cargo`/`numero_registro` (identidad y rol
+    profesional, siguen siendo de coordinador/admin)."""
+
+    telefono: str | None = Field(default=None, max_length=30)
+    especialidad: str | None = Field(default=None, max_length=120)
+
+
 class ProfesionalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

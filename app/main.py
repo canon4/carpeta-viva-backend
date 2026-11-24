@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import ARCHIVOS_CLAVE_POR_DEFECTO, JWT_SECRET_POR_DEFECTO, get_settings
-from app.modules.registry import routers
+from app.modules.registry import routers, routers_extra
 
 VERSION = "0.1.0"
 
@@ -31,6 +31,8 @@ def create_app() -> FastAPI:
         return {"estado": "ok", "version": VERSION}
 
     for router in routers():
+        app.include_router(router, prefix=settings.api_prefix)
+    for router in routers_extra():
         app.include_router(router, prefix=settings.api_prefix)
     return app
 

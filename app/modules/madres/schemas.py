@@ -24,6 +24,14 @@ class MadreUpdate(BaseModel):
     estado_certificacion: EstadoCertificacion | None = None
 
 
+class MadreAutoUpdate(BaseModel):
+    """La madre edita sus propios datos básicos (ADR-0019, sección 3). Deliberadamente sin
+    `estado_certificacion` (decisión de coordinador/admin) ni identidad legal."""
+
+    direccion: str | None = Field(default=None, max_length=255)
+    telefono: str | None = Field(default=None, max_length=30)
+
+
 class MadreOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

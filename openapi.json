@@ -146,6 +146,120 @@
         ]
       }
     },
+    "/api/v1/auth/yo": {
+      "put": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Actualizar nombre propio (solo coordinador, admin, auditor)",
+        "operationId": "actualizar_mi_nombre_endpoint_api_v1_auth_yo_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioAutoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/yo/foto": {
+      "get": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Ver la foto de perfil propia",
+        "operationId": "obtener_mi_foto_endpoint_api_v1_auth_yo_foto_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Subir o reemplazar la foto de perfil propia",
+        "operationId": "subir_mi_foto_endpoint_api_v1_auth_yo_foto_put",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_subir_mi_foto_endpoint_api_v1_auth_yo_foto_put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/auth/_estado": {
       "get": {
         "tags": [
@@ -630,6 +744,50 @@
             "HTTPBearer": []
           }
         ]
+      },
+      "put": {
+        "tags": [
+          "Madres Sustitutas"
+        ],
+        "summary": "Actualizar mis datos básicos (dirección, teléfono)",
+        "operationId": "actualizar_mi_perfil_endpoint_api_v1_madres_yo_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MadreAutoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MadreOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/madres/yo/firma": {
@@ -879,6 +1037,76 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/profesionales/yo": {
+      "get": {
+        "tags": [
+          "Profesionales"
+        ],
+        "summary": "Perfil del profesional/defensor autenticado",
+        "operationId": "mi_perfil_api_v1_profesionales_yo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfesionalOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Profesionales"
+        ],
+        "summary": "Actualizar mis datos de contacto (teléfono, especialidad)",
+        "operationId": "actualizar_mi_perfil_endpoint_api_v1_profesionales_yo_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfesionalAutoUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfesionalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/profesionales": {
@@ -3827,6 +4055,108 @@
                 "schema": {
                   "$ref": "#/components/schemas/RedApoyoOut"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/inventario/red-apoyo/{contacto_id}/foto": {
+      "put": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Subir o reemplazar la foto de perfil de un contacto de red de apoyo",
+        "operationId": "subir_foto_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__foto_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contacto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contacto Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_subir_foto_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__foto_put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedApoyoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Inventario del Hogar"
+        ],
+        "summary": "Ver la foto de perfil de un contacto de red de apoyo",
+        "operationId": "obtener_foto_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__foto_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contacto_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contacto Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -6833,6 +7163,52 @@
           }
         }
       }
+    },
+    "/api/v1/usuarios/{usuario_id}/foto": {
+      "get": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Ver la foto de perfil de cualquier usuario",
+        "operationId": "obtener_foto_de_usuario_endpoint_api_v1_usuarios__usuario_id__foto_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "usuario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Usuario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7842,6 +8218,34 @@
           "declaracion_sin_menores"
         ],
         "title": "Body_subir_foto_endpoint_api_v1_inventario_items__item_id__fotos_post"
+      },
+      "Body_subir_foto_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__foto_put": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo"
+        ],
+        "title": "Body_subir_foto_red_apoyo_endpoint_api_v1_inventario_red_apoyo__contacto_id__foto_put"
+      },
+      "Body_subir_mi_foto_endpoint_api_v1_auth_yo_foto_put": {
+        "properties": {
+          "archivo": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Archivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archivo"
+        ],
+        "title": "Body_subir_mi_foto_endpoint_api_v1_auth_yo_foto_put"
       },
       "CambioContrasenaRequest": {
         "properties": {
@@ -10103,6 +10507,37 @@
         ],
         "title": "LoginRequest"
       },
+      "MadreAutoUpdate": {
+        "properties": {
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "type": "object",
+        "title": "MadreAutoUpdate",
+        "description": "La madre edita sus propios datos básicos (ADR-0019, sección 3). Deliberadamente sin\n`estado_certificacion` (decisión de coordinador/admin) ni identidad legal."
+      },
       "MadreCreate": {
         "properties": {
           "usuario_id": {
@@ -10832,6 +11267,37 @@
         ],
         "title": "PermisoOut"
       },
+      "ProfesionalAutoUpdate": {
+        "properties": {
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "especialidad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Especialidad"
+          }
+        },
+        "type": "object",
+        "title": "ProfesionalAutoUpdate",
+        "description": "El profesional/defensor edita sus propios datos de contacto (ADR-0019, sección 4).\nDeliberadamente sin `nombres`/`apellidos`/`cargo`/`numero_registro` (identidad y rol\nprofesional, siguen siendo de coordinador/admin)."
+      },
       "ProfesionalCreate": {
         "properties": {
           "usuario_id": {
@@ -11171,6 +11637,11 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "tiene_foto": {
+            "type": "boolean",
+            "title": "Tiene Foto",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -11181,7 +11652,8 @@
           "relacion",
           "activo",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "tiene_foto"
         ],
         "title": "RedApoyoOut"
       },
@@ -11790,6 +12262,39 @@
         ],
         "title": "TokenOut"
       },
+      "UsuarioAutoUpdate": {
+        "properties": {
+          "nombres": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombres"
+          },
+          "apellidos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellidos"
+          }
+        },
+        "type": "object",
+        "title": "UsuarioAutoUpdate",
+        "description": "Solo para roles sin tabla propia (coordinador/admin/auditor): madre y profesional/defensor\nya tienen su nombre en su propia tabla (ADR-0019)."
+      },
       "UsuarioOut": {
         "properties": {
           "id": {
@@ -11816,13 +12321,41 @@
               }
             ],
             "title": "Zona Id"
+          },
+          "nombres": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombres"
+          },
+          "apellidos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apellidos"
+          },
+          "tiene_foto": {
+            "type": "boolean",
+            "title": "Tiene Foto",
+            "readOnly": true
           }
         },
         "type": "object",
         "required": [
           "id",
           "email",
-          "rol"
+          "rol",
+          "tiene_foto"
         ],
         "title": "UsuarioOut"
       },

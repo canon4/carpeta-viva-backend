@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_session
 from app.core.deps import usuario_actual
+from app.core.tipos_archivo import detectar_tipo
 from app.modules.auth.models import Usuario
 
 from .application import (
@@ -22,8 +23,10 @@ from .application import (
     listar_items,
     listar_red_apoyo,
     obtener_foto_item,
+    obtener_foto_red_apoyo,
     ocultar_foto_item,
     subir_foto_item,
+    subir_foto_red_apoyo,
 )
 from .schemas import (
     ConvivienteCreate,
@@ -222,3 +225,35 @@ def actualizar_red_apoyo_endpoint(
     usuario: Usuario = Depends(usuario_actual),
 ) -> RedApoyoOut:
     return actualizar_red_apoyo(session, usuario, contacto_id, datos)
+
+
+@router.put(
+    "/red-apoyo/{contacto_id}/foto",
+    response_model=RedApoyoOut,
+    summary="Subir o reemplazar la foto de perfil de un contacto de red de apoyo",
+)
+async def subir_foto_red_apoyo_endpoint(
+    contacto_id: uuid.UUID,
+    archivo: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> RedApoyoOut:
+    contenido = await archivo.read()
+    try:
+        return subir_foto_red_apoyo(session, usuario, contacto_id, contenido)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
+
+
+@router.get("/red-apoyo/{contacto_id}/foto", summary="Ver la foto de perfil de un contacto de red de apoyo")
+def obtener_foto_red_apoyo_endpoint(
+    contacto_id: uuid.UUID,
+    session: Session = Depends(get_session),
+    usuario: Usuario = Depends(usuario_actual),
+) -> Response:
+    contenido = obtener_foto_red_apoyo(session, usuario, contacto_id)
+    return Response(
+        content=contenido,
+        media_type=detectar_tipo(contenido) or "application/octet-stream",
+        headers=_cabeceras_vista_foto(f"foto-red-apoyo-{contacto_id}"),
+    )

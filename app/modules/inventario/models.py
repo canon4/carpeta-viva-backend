@@ -87,3 +87,6 @@ class HogarRedApoyo(UuidPk, Timestamps, Base):
     telefono: Mapped[str | None] = mapped_column(String(30), nullable=True)
     observaciones: Mapped[str | None] = mapped_column(String(255), nullable=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
+    # ADR-0019, sección 5: una sola foto de perfil por contacto (no una galería como la evidencia
+    # de inventario). Mismo mecanismo cifrado, siempre versión 1, sin historial.
+    foto_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
