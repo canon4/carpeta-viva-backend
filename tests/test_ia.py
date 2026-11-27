@@ -198,7 +198,7 @@ def test_sin_fragmentos_no_llama_al_proveedor_llm_pero_si_llama_cuando_hay_fuent
 def test_sin_menor_ni_hogar_pide_identificacion_y_no_llama_al_proveedor_llm(client, session_factory):
     zona_id, hogar_id = crear_zona_y_hogar(session_factory)
     h_admin = auth_header(client, session_factory, "admin_ia4@prueba.local", "admin")
-    menor_id = crear_menor(client, h_admin, "Menor IA4")
+    menor_id = crear_menor(client, h_admin, "Camila")
     ingresar_menor(client, h_admin, menor_id, hogar_id)
 
     uid_prof = crear_usuario(session_factory, "prof_ia4@prueba.local", "profesional")
@@ -206,35 +206,84 @@ def test_sin_menor_ni_hogar_pide_identificacion_y_no_llama_al_proveedor_llm(clie
     asignar_profesional_a_menor(session_factory, menor_id, prof_id, "trabajo_social")
     h_prof = {"Authorization": f"Bearer {login(client, 'prof_ia4@prueba.local')}"}
 
-    r = subir_documento_texto(client, h_prof, menor_id, "El menor asiste a controles médicos regulares.")
+    r = subir_documento_texto(client, h_prof, menor_id, "La menor asiste a controles médicos regulares.")
     assert r.status_code == 201, r.text
 
     usuario_prof = _usuario_por_email(session_factory, "prof_ia4@prueba.local")
 
-    # Sin menor_id ni hogar_id: aunque haya fragmentos permitidos para este profesional, no se
-    # busca entre todos a la vez (mezclaría datos de varios NNA) — se pide identificar al menor,
-    # sin llamar al proveedor de LLM.
+    # Sin menor_id ni hogar_id, y sin ningún nombre reconocible en la pregunta: aunque haya
+    # fragmentos permitidos para este profesional, no se busca entre todos a la vez (mezclaría
+    # datos de varios NNA) — se pide identificar al menor, sin llamar al proveedor de LLM.
     fake = ProveedorLLMFalso()
     with session_factory() as session:
         consulta = consultar(
-            session, usuario_prof, ConsultaCreate(pregunta="¿Cómo va el menor?"), proveedor_llm=fake
+            session, usuario_prof, ConsultaCreate(pregunta="¿Qué documentos faltan por revisar?"), proveedor_llm=fake
         )
         assert consulta.sin_resultado is True
         assert consulta.respuesta == MENSAJE_PIDE_IDENTIFICACION
         assert consulta.fragmentos_usados == []
     assert fake.llamadas == 0
 
-    # Con el menor identificado, la consulta sí busca y responde con fuente.
+    # Con el menor identificado por el selector, la consulta sí busca y responde con fuente.
     fake2 = ProveedorLLMFalso()
     with session_factory() as session:
         consulta = consultar(
             session,
             usuario_prof,
-            ConsultaCreate(pregunta="¿Cómo va el menor?", menor_id=uuid.UUID(menor_id)),
+            ConsultaCreate(pregunta="¿Cómo va el desarrollo del menor?", menor_id=uuid.UUID(menor_id)),
             proveedor_llm=fake2,
         )
         assert consulta.sin_resultado is False
     assert fake2.llamadas == 1
+
+
+# ---------------------------------------------------------------------------
+# El nombre del menor en la propia pregunta identifica automáticamente (sin
+# selector), y si hay más de uno que coincide se pide desambiguar
+# ---------------------------------------------------------------------------
+
+def test_nombre_en_la_pregunta_identifica_automaticamente_al_menor(client, session_factory):
+    zona_id, hogar_id = crear_zona_y_hogar(session_factory)
+    h_admin = auth_header(client, session_factory, "admin_ia5@prueba.local", "admin")
+    menor_id = crear_menor(client, h_admin, "Carlitos")
+    ingresar_menor(client, h_admin, menor_id, hogar_id)
+
+    uid_madre = crear_usuario(session_factory, "madre_ia5@prueba.local", "madre")
+    madre_id = crear_madre(session_factory, uid_madre, "900111222")
+    vincular_hogar_madre(session_factory, hogar_id, madre_id)
+    h_madre = {"Authorization": f"Bearer {login(client, 'madre_ia5@prueba.local')}"}
+
+    r = subir_documento_texto(client, h_madre, menor_id, "Asiste al colegio todos los días sin faltas.")
+    assert r.status_code == 201, r.text
+
+    usuario_madre = _usuario_por_email(session_factory, "madre_ia5@prueba.local")
+
+    # Sin elegir nada en el selector, pero nombrando al menor de su propio hogar: se identifica
+    # solo y responde con fuente (no pide identificación).
+    fake = ProveedorLLMFalso()
+    with session_factory() as session:
+        consulta = consultar(
+            session, usuario_madre, ConsultaCreate(pregunta="¿Cómo va Carlitos en el colegio?"), proveedor_llm=fake
+        )
+        assert consulta.sin_resultado is False
+        assert consulta.menor_id == uuid.UUID(menor_id)
+        assert "Carlitos" in consulta.respuesta  # aviso de identificación automática
+    assert fake.llamadas == 1
+
+    # Un segundo menor con el mismo primer nombre en el mismo hogar: ahora es ambiguo, se pide
+    # desambiguar en vez de adivinar, sin llamar al proveedor de LLM.
+    menor_id_2 = crear_menor(client, h_admin, "Carlitos")
+    ingresar_menor(client, h_admin, menor_id_2, hogar_id)
+
+    fake2 = ProveedorLLMFalso()
+    with session_factory() as session:
+        consulta = consultar(
+            session, usuario_madre, ConsultaCreate(pregunta="¿Cómo va Carlitos en el colegio?"), proveedor_llm=fake2
+        )
+        assert consulta.sin_resultado is True
+        assert consulta.menor_id is None
+        assert "más de un menor" in consulta.respuesta
+    assert fake2.llamadas == 0
 
 
 # ---------------------------------------------------------------------------

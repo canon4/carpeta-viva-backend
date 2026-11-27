@@ -15,6 +15,7 @@ faltante" como una consulta SPARQL contra Fuseki. Este backend todavía no sincr
 misma semántica que la consulta corregida en `ontologia/consultas.rq`. Cuando exista la
 sincronización hacia Fuseki, esta función puede migrarse a SPARQL sin cambiar su firma.
 """
+import re
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -30,6 +31,7 @@ from app.modules.auth.domain import Rol
 from . import ocr
 from .clasificacion import clasificar_categoria
 from .domain import (
+    normalizar_nombre,
     partir_en_fragmentos,
     restituir,
     seudonimizar_por_patron,
@@ -107,6 +109,60 @@ def _hogares_permitidos_ids(session: Session, usuario) -> set[uuid.UUID]:
     return set()
 
 
+def _sin_duplicados(menores: list) -> list:
+    vistos: set[uuid.UUID] = set()
+    resultado = []
+    for m in menores:
+        if m.id not in vistos:
+            vistos.add(m.id)
+            resultado.append(m)
+    return resultado
+
+
+def _candidatos_por_nombre(session: Session, usuario, pregunta: str) -> list:
+    """Identifica, entre los menores que el usuario puede ver (en la práctica, los de su propio
+    hogar para la madre, o los que tiene asignados para profesional/defensor), de cuál habla la
+    pregunta: por número de documento exacto o por coincidencia de nombre. No reemplaza al
+    selector "Sobre" del frontend: solo evita pedir identificación cuando ya es evidente (sección
+    del chat, CLAUDE.md "en función del hogar")."""
+    from app.modules.menores.application import listar_menores
+
+    menores = listar_menores(session, usuario)
+    if not menores:
+        return []
+
+    por_documento = [m for m in menores if m.numero_documento and m.numero_documento in pregunta]
+    if por_documento:
+        return _sin_duplicados(por_documento)
+
+    texto = normalizar_nombre(pregunta)
+    por_nombre_completo = []
+    por_primer_nombre = []
+    for m in menores:
+        nombre_completo = normalizar_nombre(f"{m.nombres} {m.apellidos}")
+        if nombre_completo and re.search(rf"\b{re.escape(nombre_completo)}\b", texto):
+            por_nombre_completo.append(m)
+            continue
+        primer_nombre = normalizar_nombre(m.nombres.split()[0]) if m.nombres.split() else ""
+        if len(primer_nombre) >= 3 and re.search(rf"\b{re.escape(primer_nombre)}\b", texto):
+            por_primer_nombre.append(m)
+
+    if por_nombre_completo:
+        return _sin_duplicados(por_nombre_completo)
+    return _sin_duplicados(por_primer_nombre)
+
+
+def _ruta_fuente(documento_id: uuid.UUID | None, reporte_id: uuid.UUID | None, menor_id: uuid.UUID | None) -> tuple[str, str]:
+    """(módulo, ruta del frontend) para enlazar la cita a donde se encuentra, sin adivinar una
+    URL de documento inexistente: `Reporte` no tiene pantalla propia por id hoy, así que enlaza
+    a la lista de reportes del menor."""
+    if documento_id is not None:
+        return "Gestión Documental", f"/documentos/{documento_id}"
+    if reporte_id is not None and menor_id is not None:
+        return "Reportes", f"/reportes/menor/{menor_id}"
+    return "", ""
+
+
 def _fragmento_autorizado_y_vigente(session: Session, usuario, fragmento: FragmentoDocumento) -> bool:
     """Defensa en profundidad (sección 1.5 paso 5): revalida permiso real fila por fila, nunca
     confía en `menor_id`/`hogar_id`/`seccion` denormalizados de `fragmentos_documento`. También
@@ -160,20 +216,24 @@ def _top_fragmentos(embedding_consulta: list[float], fragmentos: list[FragmentoD
     return [f for _, f in puntuados[:k]]
 
 
-def _metadatos_cita(session: Session, fragmento: FragmentoDocumento) -> tuple[uuid.UUID | None, uuid.UUID | None, str, str]:
+def _metadatos_cita(
+    session: Session, fragmento: FragmentoDocumento
+) -> tuple[uuid.UUID | None, uuid.UUID | None, str, str, str]:
     if fragmento.documento_id is not None:
         from app.modules.documentos.repository import DocumentoRepository
 
         documento = DocumentoRepository(session).por_id(fragmento.documento_id)
         categoria = documento.categoria if documento else "desconocida"
         fecha = documento.created_at.date().isoformat() if documento else ""
-        return fragmento.documento_id, None, categoria, fecha
+        titulo = documento.titulo if documento else "Documento"
+        return fragmento.documento_id, None, categoria, fecha, titulo
     from app.modules.documentos.repository import ReporteRepository
 
     reporte = ReporteRepository(session).por_id(fragmento.reporte_id)
     categoria = reporte.tipo_reporte if reporte else "desconocida"
     fecha = reporte.created_at.date().isoformat() if reporte else ""
-    return None, fragmento.reporte_id, categoria, fecha
+    titulo = f"Reporte de {categoria}" if reporte else "Reporte"
+    return None, fragmento.reporte_id, categoria, fecha, titulo
 
 
 INSTRUCCIONES_SISTEMA_BASE = (
@@ -213,9 +273,10 @@ def _generar_respuesta_con_citas(
         mapa_nombres.update(mapa_n)
         mapa_patrones.update(mapa_p)
 
-        documento_id, reporte_id, categoria, fecha = _metadatos_cita(session, fragmento)
+        documento_id, reporte_id, categoria, fecha, titulo = _metadatos_cita(session, fragmento)
         marcador_cita = f"[{categoria}, {fecha}, doc {str(documento_id or reporte_id)[:8]} v{fragmento.version_documento}]"
         contexto_partes.append(f"Fuente {marcador_cita}:\n{texto_sin_patrones}")
+        modulo, ruta = _ruta_fuente(documento_id, reporte_id, fragmento.menor_id)
         citas.append(
             CitaOut(
                 documento_id=documento_id,
@@ -224,6 +285,7 @@ def _generar_respuesta_con_citas(
                 categoria=categoria,
                 fecha=fecha,
                 texto=marcador_cita,
+                titulo=titulo,
             )
         )
         fragmentos_usados.append(
@@ -232,6 +294,11 @@ def _generar_respuesta_con_citas(
                 "documento_id": str(documento_id) if documento_id else None,
                 "reporte_id": str(reporte_id) if reporte_id else None,
                 "version_documento": fragmento.version_documento,
+                "titulo": titulo,
+                "categoria": categoria,
+                "fecha": fecha,
+                "modulo": modulo,
+                "ruta": ruta,
             }
         )
 
@@ -259,6 +326,40 @@ def _generar_respuesta_con_citas(
 # RAG con citas (sección 1.5) — POST /ia/consultas
 # ---------------------------------------------------------------------------
 
+def _consulta_sin_busqueda(
+    session: Session,
+    usuario,
+    datos: ConsultaCreate,
+    settings,
+    t0: float,
+    *,
+    mensaje: str,
+    accion: str,
+    menor_id: uuid.UUID | None = None,
+    hogar_id: uuid.UUID | None = None,
+) -> IaConsulta:
+    """Registra una consulta que no llegó a buscar (identificación pendiente o ambigua, o sin
+    fragmentos permitidos): nunca se llama al proveedor de LLM en estos casos."""
+    duracion_ms = int((time.monotonic() - t0) * 1000)
+    consulta = IaConsultaRepository(session).crear(
+        IaConsulta(
+            usuario_id=usuario.id,
+            pregunta=datos.pregunta,
+            menor_id=menor_id,
+            hogar_id=hogar_id,
+            fragmentos_usados=[],
+            respuesta=mensaje,
+            modelo="n/a",
+            proveedor="n/a",
+            anonimizado=settings.ia_anonimizado_por_defecto,
+            sin_resultado=True,
+            duracion_ms=duracion_ms,
+        )
+    )
+    registrar_acceso(session, accion=accion, usuario_id=usuario.id, menor_id=menor_id)
+    return consulta
+
+
 def consultar(session: Session, usuario, datos: ConsultaCreate, *, proveedor_llm: ProveedorLLM | None = None) -> IaConsulta:
     if usuario.rol == Rol.AUDITOR.value:
         registrar_acceso(session, accion="ia_consulta_denegada", usuario_id=usuario.id)
@@ -267,64 +368,70 @@ def consultar(session: Session, usuario, datos: ConsultaCreate, *, proveedor_llm
     t0 = time.monotonic()
     settings = get_settings()
 
-    if datos.menor_id is None and datos.hogar_id is None:
-        # Regla del chat: sin menor ni hogar elegido no se busca entre todos los expedientes a
-        # la vez (mezclaría datos de varios NNA en una sola respuesta) — se pide identificar al
-        # menor antes de buscar.
-        duracion_ms = int((time.monotonic() - t0) * 1000)
-        consulta = IaConsultaRepository(session).crear(
-            IaConsulta(
-                usuario_id=usuario.id,
-                pregunta=datos.pregunta,
-                menor_id=None,
-                hogar_id=None,
-                fragmentos_usados=[],
-                respuesta=MENSAJE_PIDE_IDENTIFICACION,
-                modelo="n/a",
-                proveedor="n/a",
-                anonimizado=settings.ia_anonimizado_por_defecto,
-                sin_resultado=True,
-                duracion_ms=duracion_ms,
-            )
-        )
-        registrar_acceso(session, accion="ia_consulta_requiere_identificacion", usuario_id=usuario.id)
-        return consulta
+    menor_id = datos.menor_id
+    hogar_id = datos.hogar_id
+    aviso_identificacion = ""
 
-    permitidos = _candidatos_permitidos(session, usuario, datos.menor_id, datos.hogar_id)
+    if menor_id is None and hogar_id is None:
+        # Regla del chat: sin menor ni hogar elegido no se busca entre todos los expedientes a la
+        # vez (mezclaría datos de varios NNA en una sola respuesta). Primero se intenta identificar
+        # al menor por el nombre o la cédula ya mencionados en la propia pregunta (en la práctica,
+        # para la madre, entre los 5 o 6 de su propio hogar) — solo si sigue sin ser evidente se
+        # pide identificación o, si hay más de uno, se pide desambiguar.
+        candidatos_nombre = _candidatos_por_nombre(session, usuario, datos.pregunta)
+        if len(candidatos_nombre) == 1:
+            encontrado = candidatos_nombre[0]
+            menor_id = encontrado.id
+            aviso_identificacion = f"(Entendido: pregunta por {encontrado.nombres} {encontrado.apellidos}.)\n\n"
+        elif len(candidatos_nombre) > 1:
+            nombres = ", ".join(f"{m.nombres} {m.apellidos}" for m in candidatos_nombre[:5])
+            mensaje = (
+                f"Hay más de un menor que coincide con su pregunta: {nombres}. Indique el nombre "
+                'completo, el número de identificación, o elíjalo en el selector "Sobre".'
+            )
+            return _consulta_sin_busqueda(
+                session, usuario, datos, settings, t0, mensaje=mensaje, accion="ia_consulta_nombre_ambiguo"
+            )
+        else:
+            return _consulta_sin_busqueda(
+                session,
+                usuario,
+                datos,
+                settings,
+                t0,
+                mensaje=MENSAJE_PIDE_IDENTIFICACION,
+                accion="ia_consulta_requiere_identificacion",
+            )
+
+    permitidos = _candidatos_permitidos(session, usuario, menor_id, hogar_id)
 
     if not permitidos:
-        duracion_ms = int((time.monotonic() - t0) * 1000)
-        consulta = IaConsultaRepository(session).crear(
-            IaConsulta(
-                usuario_id=usuario.id,
-                pregunta=datos.pregunta,
-                menor_id=datos.menor_id,
-                hogar_id=datos.hogar_id,
-                fragmentos_usados=[],
-                respuesta=MENSAJE_SIN_RESULTADO,
-                modelo="n/a",
-                proveedor="n/a",
-                anonimizado=settings.ia_anonimizado_por_defecto,
-                sin_resultado=True,
-                duracion_ms=duracion_ms,
-            )
+        return _consulta_sin_busqueda(
+            session,
+            usuario,
+            datos,
+            settings,
+            t0,
+            mensaje=aviso_identificacion + MENSAJE_SIN_RESULTADO,
+            accion="ia_consulta_sin_resultado",
+            menor_id=menor_id,
+            hogar_id=hogar_id,
         )
-        registrar_acceso(session, accion="ia_consulta_sin_resultado", usuario_id=usuario.id, menor_id=datos.menor_id)
-        return consulta
 
     embedding_pregunta = calcular_embedding(datos.pregunta)
     top = _top_fragmentos(embedding_pregunta, permitidos, k=5)
     respuesta_texto, fragmentos_usados, _citas, modelo, proveedor = _generar_respuesta_con_citas(
         session, pregunta=datos.pregunta, fragmentos=top, proveedor_llm=proveedor_llm
     )
+    respuesta_texto = aviso_identificacion + respuesta_texto
 
     duracion_ms = int((time.monotonic() - t0) * 1000)
     consulta = IaConsultaRepository(session).crear(
         IaConsulta(
             usuario_id=usuario.id,
             pregunta=datos.pregunta,
-            menor_id=datos.menor_id,
-            hogar_id=datos.hogar_id,
+            menor_id=menor_id,
+            hogar_id=hogar_id,
             fragmentos_usados=fragmentos_usados,
             respuesta=respuesta_texto,
             modelo=modelo,
@@ -334,7 +441,7 @@ def consultar(session: Session, usuario, datos: ConsultaCreate, *, proveedor_llm
             duracion_ms=duracion_ms,
         )
     )
-    registrar_acceso(session, accion="ia_consulta_respondida", usuario_id=usuario.id, menor_id=datos.menor_id)
+    registrar_acceso(session, accion="ia_consulta_respondida", usuario_id=usuario.id, menor_id=menor_id)
     return consulta
 
 

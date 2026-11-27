@@ -26,6 +26,7 @@ class CitaOut(BaseModel):
     categoria: str
     fecha: str
     texto: str = Field(description="Formato de cita ya armado, sin nombres reales (sección 1.5 paso 6)")
+    titulo: str = Field(default="", description="Título del documento, o un rótulo genérico para el reporte")
 
 
 class ConsultaCreate(BaseModel):
