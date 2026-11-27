@@ -21,3 +21,8 @@ groq~=0.37
 pytesseract~=0.3
 Pillow~=13.0
 sentence-transformers~=6.2
+# Extracción de texto para indexar PDF, Word (.docx) y Excel (.xlsx) sin binarios de sistema
+# (sección 1.2, corrección de la limitación documentada en ocr.py).
+pypdf~=7.2
+python-docx~=1.2
+openpyxl~=3.1
