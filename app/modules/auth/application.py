@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import jwt
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -8,7 +9,7 @@ from app.core import almacenamiento
 from app.core.audit import registrar_acceso
 from app.core.config import get_settings
 from app.core.errors import no_autenticado, no_encontrado, prohibido
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 from app.core.tipos_archivo import detectar_tipo
 
 from .domain import FOTO_PERFIL_TAMANIO_MAXIMO_BYTES, MIME_FOTOS_PERFIL_PERMITIDOS, ROLES_SIN_TABLA_PROPIA
@@ -38,7 +39,10 @@ def _bloqueada() -> HTTPException:
     )
 
 
-def iniciar_sesion(session: Session, email: str, password: str, ip: str | None = None) -> str:
+def iniciar_sesion(session: Session, email: str, password: str, ip: str | None = None) -> tuple[str, str]:
+    """Devuelve (access_token, refresh_token). El access token va en el cuerpo de la respuesta
+    (vive en memoria en el frontend); el refresh token lo pone `api.py` en una cookie httpOnly y
+    nunca se expone en JSON (esquema de sesión de `auth`, ver `AuthService` en el frontend)."""
     settings = get_settings()
     email = email.strip().lower()
     repo = UsuarioRepository(session)
@@ -72,11 +76,35 @@ def iniciar_sesion(session: Session, email: str, password: str, ip: str | None =
         usuario.bloqueado_hasta = None
         repo.guardar(usuario)
     registrar_acceso(session, accion="login_ok", usuario_id=usuario.id, ip=ip)
-    return create_access_token(str(usuario.id), usuario.rol)
+    return create_access_token(str(usuario.id), usuario.rol), create_refresh_token(str(usuario.id))
 
 
-def cambiar_contrasena(session: Session, usuario, actual: str, nueva: str, ip: str | None = None) -> str:
-    """Cambia la contraseña propia (RF0.4). Invalida los tokens anteriores y devuelve uno nuevo."""
+def refrescar_sesion(session: Session, refresh_token: str | None) -> tuple[str, str]:
+    """Renueva la sesión a partir de la cookie httpOnly de refresco, sin pedir contraseña de
+    nuevo (se llama al cargar la aplicación, para que recargar la página no cierre la sesión).
+    Mismas comprobaciones que `usuario_actual` (activo, no revocado por cambio de contraseña).
+    Devuelve (access_token, refresh_token): el refresh token se renueva también (sesión
+    deslizante) para que el uso activo no expire a los 7 días."""
+    if not refresh_token:
+        raise no_autenticado("No hay sesión que renovar")
+    try:
+        datos = decode_token(refresh_token)
+        if datos.get("tipo") != "refresh":
+            raise no_autenticado("El token no es de renovación")
+        usuario_id = uuid.UUID(datos["sub"])
+    except (jwt.PyJWTError, KeyError, ValueError):
+        raise no_autenticado("La sesión venció; inicie sesión de nuevo")
+    usuario = UsuarioRepository(session).por_id(usuario_id)
+    if usuario is None or not usuario.activo:
+        raise no_autenticado("Usuario inactivo o inexistente")
+    if token_revocado(usuario, datos.get("iat")):
+        raise no_autenticado("La sesión ya no es válida; inicie sesión de nuevo")
+    return create_access_token(str(usuario.id), usuario.rol), create_refresh_token(str(usuario.id))
+
+
+def cambiar_contrasena(session: Session, usuario, actual: str, nueva: str, ip: str | None = None) -> tuple[str, str]:
+    """Cambia la contraseña propia (RF0.4). Invalida los tokens anteriores (incluida la cookie de
+    refresco) y devuelve un (access_token, refresh_token) nuevo para no cerrar la sesión actual."""
     settings = get_settings()
     if not verify_password(actual, usuario.password_hash):
         registrar_acceso(session, accion="contrasena_cambio_denegado", usuario_id=usuario.id, ip=ip)
@@ -93,7 +121,7 @@ def cambiar_contrasena(session: Session, usuario, actual: str, nueva: str, ip: s
     usuario.credenciales_cambiadas_en = _ahora().replace(microsecond=0)
     UsuarioRepository(session).guardar(usuario)
     registrar_acceso(session, accion="contrasena_cambiada", usuario_id=usuario.id, ip=ip)
-    return create_access_token(str(usuario.id), usuario.rol)
+    return create_access_token(str(usuario.id), usuario.rol), create_refresh_token(str(usuario.id))
 
 
 def token_revocado(usuario, emitido_en: int | None) -> bool:

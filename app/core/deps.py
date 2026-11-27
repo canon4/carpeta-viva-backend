@@ -24,6 +24,8 @@ def usuario_actual(
         raise no_autenticado("Falta el token")
     try:
         datos = decode_token(credenciales.credentials)
+        if datos.get("tipo") == "refresh":
+            raise no_autenticado("Se requiere un token de acceso, no de renovación")
         usuario_id = uuid.UUID(datos["sub"])
     except (jwt.PyJWTError, KeyError, ValueError):
         raise no_autenticado("Token inválido o vencido")

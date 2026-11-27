@@ -74,6 +74,41 @@
         }
       }
     },
+    "/api/v1/auth/refrescar": {
+      "post": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Renovar la sesión a partir de la cookie httpOnly (sin pedir contraseña de nuevo)",
+        "operationId": "refrescar_sesion_endpoint_api_v1_auth_refrescar_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Autenticación y Accesos"
+        ],
+        "summary": "Cerrar sesión (borra la cookie de refresco)",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
     "/api/v1/auth/me": {
       "get": {
         "tags": [

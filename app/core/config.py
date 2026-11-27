@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     jwt_secret: str = JWT_SECRET_POR_DEFECTO
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
+    # Token de renovación (cookie httpOnly, esquema de sesión de `auth`): vida más larga que el
+    # access token para que recargar la página no cierre la sesión, pero acotada (7 días) para
+    # que una cookie robada no sirva indefinidamente.
+    jwt_refresh_expire_minutes: int = 60 * 24 * 7
     # Bloqueo temporal tras intentos fallidos de inicio de sesión (RF0.5, HU04).
     login_max_intentos: int = 5
     login_bloqueo_minutos: int = 15

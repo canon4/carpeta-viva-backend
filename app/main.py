@@ -24,6 +24,10 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
+        # La cookie httpOnly de renovación de sesión (`auth`) solo viaja si el navegador puede
+        # mandar credenciales en la petición entre orígenes; `cors_origins` ya lista orígenes
+        # explícitos (nunca "*"), que es lo que exige el navegador para permitir esto.
+        allow_credentials=True,
     )
 
     @app.get(f"{settings.api_prefix}/health", tags=["Sistema"], summary="Estado del servicio")

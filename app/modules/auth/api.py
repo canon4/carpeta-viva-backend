@@ -1,9 +1,9 @@
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.database import get_session
 from app.core.deps import usuario_actual
 from app.core.tipos_archivo import detectar_tipo
@@ -14,6 +14,7 @@ from .application import (
     iniciar_sesion,
     obtener_foto_de_usuario,
     obtener_mi_foto,
+    refrescar_sesion,
     subir_mi_foto,
 )
 from .models import Usuario
@@ -21,6 +22,25 @@ from .schemas import CambioContrasenaRequest, LoginRequest, TokenOut, UsuarioAut
 
 router = APIRouter(prefix="/auth", tags=["Autenticación y Accesos"])
 usuarios_router = APIRouter(prefix="/usuarios", tags=["Autenticación y Accesos"])
+
+# Esquema de sesión (reemplaza "el token vive solo en memoria" del frontend): el refresh token
+# nunca se expone en JSON, solo viaja en esta cookie httpOnly, acotada a las rutas de `auth` para
+# minimizar dónde se envía. `secure` se exige fuera de desarrollo (en local se sirve por http).
+_COOKIE_REFRESH = "refresh_token"
+_COOKIE_PATH = "/api/v1/auth"
+
+
+def _set_cookie_refresh(response: Response, refresh_token: str) -> None:
+    settings = get_settings()
+    response.set_cookie(
+        _COOKIE_REFRESH,
+        refresh_token,
+        max_age=settings.jwt_refresh_expire_minutes * 60,
+        path=_COOKIE_PATH,
+        httponly=True,
+        secure=settings.environment == "production",
+        samesite="lax",
+    )
 
 
 def _respuesta_foto(contenido: bytes, nombre: str) -> Response:
@@ -49,8 +69,28 @@ def _ip(request: Request) -> str | None:
     summary="Iniciar sesión",
     responses={429: {"description": "Cuenta bloqueada temporalmente por intentos fallidos"}},
 )
-def login(datos: LoginRequest, request: Request, session: Session = Depends(get_session)) -> TokenOut:
-    return TokenOut(access_token=iniciar_sesion(session, datos.email, datos.password, _ip(request)))
+def login(
+    datos: LoginRequest, request: Request, response: Response, session: Session = Depends(get_session)
+) -> TokenOut:
+    access_token, refresh_token = iniciar_sesion(session, datos.email, datos.password, _ip(request))
+    _set_cookie_refresh(response, refresh_token)
+    return TokenOut(access_token=access_token)
+
+
+@router.post(
+    "/refrescar",
+    response_model=TokenOut,
+    summary="Renovar la sesión a partir de la cookie httpOnly (sin pedir contraseña de nuevo)",
+)
+def refrescar_sesion_endpoint(request: Request, response: Response, session: Session = Depends(get_session)) -> TokenOut:
+    access_token, refresh_token = refrescar_sesion(session, request.cookies.get(_COOKIE_REFRESH))
+    _set_cookie_refresh(response, refresh_token)
+    return TokenOut(access_token=access_token)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, summary="Cerrar sesión (borra la cookie de refresco)")
+def logout(response: Response) -> None:
+    response.delete_cookie(_COOKIE_REFRESH, path=_COOKIE_PATH)
 
 
 @router.get("/me", response_model=UsuarioOut, summary="Usuario autenticado")
@@ -66,14 +106,16 @@ def me(usuario: Usuario = Depends(usuario_actual)) -> Usuario:
 def cambiar_contrasena_endpoint(
     datos: CambioContrasenaRequest,
     request: Request,
+    response: Response,
     session: Session = Depends(get_session),
     usuario: Usuario = Depends(usuario_actual),
 ) -> TokenOut:
     try:
-        token = cambiar_contrasena(session, usuario, datos.actual, datos.nueva, _ip(request))
+        access_token, refresh_token = cambiar_contrasena(session, usuario, datos.actual, datos.nueva, _ip(request))
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
-    return TokenOut(access_token=token)
+    _set_cookie_refresh(response, refresh_token)
+    return TokenOut(access_token=access_token)
 
 
 @router.put("/yo", response_model=UsuarioOut, summary="Actualizar nombre propio (solo coordinador, admin, auditor)")
